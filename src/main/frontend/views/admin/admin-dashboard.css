@@ -1,0 +1,71 @@
+/* ============================================================
+   admin-dashboard.css
+   Applied via @CssImport (global styles for dashboard view)
+   ============================================================ */
+
+/* Scrollbar styling */
+:host {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143, 176, 138, 0.3) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(143, 176, 138, 0.3);
+    border-radius: 3px;
+}
+
+/* Dashboard search field */
+vaadin-text-field.dashboard-search {
+    --vaadin-input-field-background: rgba(255, 255, 255, 0.06);
+    --vaadin-input-field-border-color: rgba(255, 255, 255, 0.08);
+    --vaadin-input-field-value-color: rgba(255, 255, 255, 0.9);
+    --vaadin-input-field-placeholder-color: rgba(255, 255, 255, 0.35);
+    --lumo-primary-color: #6aab6a;
+}
+
+vaadin-text-field.dashboard-search::part(input-field) {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+}
+
+vaadin-text-field.dashboard-search[focused]::part(input-field) {
+    border-color: rgba(106, 171, 106, 0.5) !important;
+    box-shadow: 0 0 0 2px rgba(106, 171, 106, 0.12) !important;
+}
+
+/* Dialog styling */
+vaadin-dialog-overlay::part(overlay) {
+    background: #1e2e20;
+    border: 1px solid rgba(143, 176, 138, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Dialog form fields */
+vaadin-text-field.dialog-field,
+vaadin-integer-field.dialog-field,
+vaadin-select.dialog-field {
+    --vaadin-input-field-background: rgba(255, 255, 255, 0.06);
+    --vaadin-input-field-border-color: rgba(143, 176, 138, 0.25);
+    --vaadin-input-field-value-color: white;
+    --vaadin-input-field-placeholder-color: rgba(184, 201, 191, 0.4);
+    --lumo-primary-color: #8fb08a;
+}
+
+vaadin-text-field.dialog-field::part(input-field),
+vaadin-integer-field.dialog-field::part(input-field),
+vaadin-select.dialog-field::part(input-field) {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(143, 176, 138, 0.25) !important;
+    border-radius: 8px !important;
+}

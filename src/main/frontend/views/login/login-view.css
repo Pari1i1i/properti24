@@ -1,0 +1,62 @@
+/* ============================================================
+   login-view.css
+   Applied via @CssImport themeFor="vaadin-text-field"
+   and themeFor="vaadin-password-field"
+   ============================================================ */
+
+/* Dark input field background */
+:host {
+    --lumo-base-color: transparent;
+    --lumo-body-text-color: #ffffff;
+    --lumo-secondary-text-color: rgba(184, 201, 191, 0.75);
+    --lumo-disabled-text-color: rgba(184, 201, 191, 0.4);
+    --lumo-primary-color: #8fb08a;
+    --lumo-primary-text-color: #8fb08a;
+    --lumo-contrast-5pct: rgba(255, 255, 255, 0.06);
+    --lumo-contrast-10pct: rgba(143, 176, 138, 0.3);
+    --lumo-contrast-20pct: rgba(143, 176, 138, 0.45);
+    --lumo-contrast-50pct: rgba(143, 176, 138, 0.65);
+    --lumo-contrast-90pct: white;
+    --vaadin-input-field-background: rgba(255, 255, 255, 0.07);
+    --vaadin-input-field-border-color: rgba(143, 176, 138, 0.32);
+    --vaadin-input-field-value-color: white;
+    --vaadin-input-field-placeholder-color: rgba(184, 201, 191, 0.45);
+    --vaadin-input-field-focused-border-color: #8fb08a;
+    font-family: 'Inter', sans-serif;
+}
+
+[part="input-field"] {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border: 1px solid rgba(143, 176, 138, 0.32) !important;
+    border-radius: 8px !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:host([focused]) [part="input-field"] {
+    border-color: #8fb08a !important;
+    box-shadow: 0 0 0 3px rgba(143, 176, 138, 0.18) !important;
+}
+
+[part="value"] {
+    color: white !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+}
+
+[part="placeholder"] {
+    color: rgba(184, 201, 191, 0.45) !important;
+}
+
+[part="label"] {
+    color: rgba(184, 201, 191, 0.8) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Toggle button on password field */
+[part="reveal-button"] {
+    color: #8fb08a !important;
+}
