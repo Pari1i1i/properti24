@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Pinjaman {
 
-    public enum StatusPinjaman { pending, disetujui, ditolak, selesai }
+    public enum StatusPinjaman { dipinjam, ditolak, selesai }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

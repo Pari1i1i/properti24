@@ -47,9 +47,15 @@ public class LoginView extends HorizontalLayout {
         setSizeFull();
         setSpacing(false);
         setPadding(false);
-        getStyle().set("overflow", "hidden");
+        getStyle()
+                .set("overflow", "auto")
+                .set("flex-wrap", "wrap");
 
-        add(buildLeftPanel(), buildRightPanel());
+        Div leftPanel  = buildLeftPanel();
+        Div rightPanel = buildRightPanel();
+        leftPanel.addClassName("login-left-panel");
+        rightPanel.addClassName("login-right-panel");
+        add(leftPanel, rightPanel);
 
         // Inject global styles + Google Fonts
         addAttachListener(e -> {
@@ -72,7 +78,7 @@ public class LoginView extends HorizontalLayout {
                 .set("justify-content", "center")
                 .set("position", "relative")
                 .set("overflow", "hidden")
-                .set("min-height", "100vh");
+                .set("min-height", "240px");
 
         // ── Decorative Bubbles ───────────────────────────────────────────
         panel.add(mkBubble("340px", "rgba(143,176,138,0.12)", "-170px", "-170px", null, null));
@@ -104,13 +110,15 @@ public class LoginView extends HorizontalLayout {
         Div panel = new Div();
         panel.getStyle()
                 .set("flex", "1")
+                .set("min-width", "320px")
                 .set("background", "#1c3b2e")
                 .set("display", "flex")
                 .set("align-items", "center")
                 .set("justify-content", "center")
                 .set("position", "relative")
                 .set("overflow", "hidden")
-                .set("min-height", "100vh");
+                .set("min-height", "100vh")
+                .set("padding", "32px 0");
 
         // Decorative bubbles on dark panel
         panel.add(mkBubble("140px", "rgba(143,176,138,0.08)", "-70px", "-70px", null, null));
@@ -120,8 +128,11 @@ public class LoginView extends HorizontalLayout {
 
         // ── Form Box ────────────────────────────────────────────────────
         Div formBox = new Div();
+        formBox.addClassName("login-formbox");
         formBox.getStyle()
-                .set("width", "390px")
+                .set("width", "100%")
+                .set("max-width", "380px")
+                .set("padding", "0 24px")
                 .set("position", "relative")
                 .set("z-index", "1");
 
@@ -376,12 +387,28 @@ public class LoginView extends HorizontalLayout {
             "}" +
             "a{cursor:pointer;}" +
             "vaadin-checkbox::part(checkbox){" +
-            "  border-color:rgba(143,176,138,0.5)!important;" +
-            "  background:transparent!important;" +
+            "  border: 2px solid #8fb08a!important;" +
+            "  background: rgba(255,255,255,0.12)!important;" +
+            "  border-radius: 4px!important;" +
             "}" +
             "vaadin-checkbox[checked]::part(checkbox){" +
             "  background:#8fb08a!important;" +
             "  border-color:#8fb08a!important;" +
+            "}" +
+            /* Fix browser autofill override for login page — keep dark bg + white text */
+            ".login-formbox input:-webkit-autofill," +
+            ".login-formbox input:-webkit-autofill:hover," +
+            ".login-formbox input:-webkit-autofill:focus," +
+            ".login-formbox input:-webkit-autofill:active{" +
+            "  -webkit-box-shadow:0 0 0 40px #1c3b2e inset!important;" +
+            "  -webkit-text-fill-color:white!important;" +
+            "  caret-color:white!important;" +
+            "}" +
+            /* Mobile: hide the logo left panel, show only the dark form panel stacked */
+            "@media(max-width:700px){" +
+            "  .login-left-panel{min-height:220px!important;flex:none!important;width:100%!important;}" +
+            "  .login-right-panel{min-height:unset!important;flex:none!important;width:100%!important;padding:28px 0 40px!important;}" +
+            "  .login-formbox{max-width:100%!important;}" +
             "}";
         getElement().executeJs(
             "if(!document.getElementById('p24-login-css')){" +

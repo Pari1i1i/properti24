@@ -19,16 +19,19 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import property24.entity.Barang;
-import property24.entity.Kategori;
-import property24.entity.Ruangan;
+import property24.entity.*;
 import property24.service.BarangService;
+import property24.service.PinjamanService;
 import property24.util.AuthSession;
+import property24.util.FileUploadHelper;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
 
 @Route("admin-dashboard")
 @PageTitle("Dashboard Admin | Property 24")
@@ -36,6 +39,7 @@ import java.util.List;
 public class AdminDashboardView extends HorizontalLayout {
 
     private final BarangService barangService;
+    private final PinjamanService pinjamanService;
 
     // Layout nodes that need to be refreshed
     private Div assetGridContainer;
@@ -45,15 +49,20 @@ public class AdminDashboardView extends HorizontalLayout {
     private Div statCatEl;
     private String activeFilter = "all";
 
+    private Div mainBodyContainer;
+    private Span navApproveBadge;
+    private User currentUser;
+
     // ── Sidebar nav items ─────────────────────────────────────────────────
     private Div navDashboard;
-    private Div navAssets;
     private Div navBorrowed;
     private Div navApprove;
     private Div navSettings;
 
-    public AdminDashboardView(BarangService barangService) {
+    public AdminDashboardView(BarangService barangService, PinjamanService pinjamanService) {
         this.barangService = barangService;
+        this.pinjamanService = pinjamanService;
+        this.currentUser = AuthSession.getCurrentUser();
 
         // Auth guard
         if (!AuthSession.isLoggedIn() || !AuthSession.isAdmin()) {
@@ -144,33 +153,39 @@ public class AdminDashboardView extends HorizontalLayout {
         Div navLabel = navSection("MAIN MENU");
 
         navDashboard = navItem(ICON_DASHBOARD, "Dashboard", true);
-        navAssets    = navItem(ICON_BOX,       "Assets",    false);
         navBorrowed  = navItem(ICON_CLIPBOARD, "Borrowed",  false);
 
         Div approveLabel = navSection("APPROVE BY ADMIN");
         navApprove   = navItem(ICON_CHECK,     "Approve Assets", false);
         navSettings  = navItem(ICON_SETTINGS,  "Settings",  false);
 
+        // Pending approvals counter badge on sidebar
+        int pendingCnt = pinjamanService.getPendingPengembalian().size();
+        navApproveBadge = new Span(String.valueOf(pendingCnt));
+        navApproveBadge.getStyle()
+                .set("background", "#e07a2a")
+                .set("color", "white")
+                .set("font-size", "10px")
+                .set("font-weight", "700")
+                .set("padding", "2px 7px")
+                .set("border-radius", "10px")
+                .set("margin-left", "auto")
+                .set("display", pendingCnt > 0 ? "inline-block" : "none");
+        navApprove.add(navApproveBadge);
+
         // Click handlers
         navDashboard.addClickListener(e -> setActiveNav("dashboard"));
-        navAssets.addClickListener(e -> {
-            setActiveNav("assets");
-            info("Halaman Assets coming soon!");
-        });
         navBorrowed.addClickListener(e -> {
             setActiveNav("borrowed");
             info("Halaman Borrowed coming soon!");
         });
-        navApprove.addClickListener(e -> {
-            setActiveNav("approve");
-            info("Halaman Approve coming soon!");
-        });
+        navApprove.addClickListener(e -> setActiveNav("approve"));
         navSettings.addClickListener(e -> {
             setActiveNav("settings");
             info("Halaman Settings coming soon!");
         });
 
-        nav.add(navLabel, navDashboard, navAssets, navBorrowed, approveLabel, navApprove, navSettings);
+        nav.add(navLabel, navDashboard, navBorrowed, approveLabel, navApprove, navSettings);
 
         // ── User Info at bottom ───────────────────────────────────────────
         Div userInfo = new Div();
@@ -292,19 +307,25 @@ public class AdminDashboardView extends HorizontalLayout {
 
     private void setActiveNav(String which) {
         resetNav(navDashboard);
-        resetNav(navAssets);
         resetNav(navBorrowed);
         resetNav(navApprove);
         resetNav(navSettings);
 
         Div target = switch (which) {
-            case "assets"   -> navAssets;
             case "borrowed" -> navBorrowed;
             case "approve"  -> navApprove;
             case "settings" -> navSettings;
             default         -> navDashboard;
         };
         activateNav(target);
+
+        if (mainBodyContainer != null) {
+            mainBodyContainer.removeAll();
+            switch (which) {
+                case "approve"  -> mainBodyContainer.add(buildApproveView());
+                default         -> mainBodyContainer.add(buildScrollableBody());
+            }
+        }
     }
 
     private void resetNav(Div item) {
@@ -354,7 +375,15 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("overflow", "hidden")
                 .set("background", "#f0f4f1");
 
-        main.add(buildTopBar(), buildScrollableBody());
+        mainBodyContainer = new Div();
+        mainBodyContainer.getStyle()
+                .set("flex", "1")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("overflow", "hidden");
+
+        mainBodyContainer.add(buildScrollableBody());
+        main.add(buildTopBar(), mainBodyContainer);
         return main;
     }
 
@@ -730,15 +759,26 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("position", "relative")
                 .set("display", "flex")
                 .set("align-items", "center")
-                .set("justify-content", "center");
+                .set("justify-content", "center")
+                .set("overflow", "hidden");
 
-        // Product illustration SVG (bigger)
-        Div catIconWrap = new Div();
-        catIconWrap.getElement().setProperty("innerHTML",
-                svgStr(categoryIconPath(barang.getKategori() != null
-                        ? barang.getKategori().getNamaKategori() : ""), "72", "rgba(255,255,255,0.55)"));
-        catIconWrap.getStyle().set("filter", "drop-shadow(0 4px 12px rgba(0,0,0,0.25))");
-        imgSection.add(catIconWrap);
+        String fotoName = barang.getFotoBarang();
+        if (fotoName != null && !fotoName.trim().isEmpty()) {
+            Image assetImg = new Image("images/" + fotoName.trim(), barang.getNamaBarang());
+            assetImg.getStyle()
+                    .set("width", "100%")
+                    .set("height", "100%")
+                    .set("object-fit", "cover");
+            imgSection.add(assetImg);
+        } else {
+            // Product illustration SVG (bigger)
+            Div catIconWrap = new Div();
+            catIconWrap.getElement().setProperty("innerHTML",
+                    svgStr(categoryIconPath(barang.getKategori() != null
+                            ? barang.getKategori().getNamaKategori() : ""), "72", "rgba(255,255,255,0.55)"));
+            catIconWrap.getStyle().set("filter", "drop-shadow(0 4px 12px rgba(0,0,0,0.25))");
+            imgSection.add(catIconWrap);
+        }
 
         // Status badge – top left, pill shape
         Div statusBadge = new Div();
@@ -845,7 +885,10 @@ public class AdminDashboardView extends HorizontalLayout {
                 ? barang.getDeskripsiBintang() : "No description available";
         descDiv.setText(desc);
 
-        // Action buttons
+        // Click anywhere on card body to view Detail
+        card.addClickListener(e -> showBarangDetail(barang));
+
+        // Action buttons (Edit & Hapus)
         Div actions = new Div();
         actions.getStyle()
                 .set("display", "flex")
@@ -853,16 +896,16 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("border-top", "1px solid rgba(0,0,0,0.06)")
                 .set("padding-top", "10px");
 
-        Button editBtn = actionBtnLight("Edit", ICON_EDIT, "#3a7bd5", barang);
-        Button detailBtn = actionBtnLightGreen("Detail", ICON_EYE, barang);
-        actions.add(editBtn, detailBtn);
+        Button editBtn = actionBtnEdit("Edit", ICON_EDIT, "#3a7bd5", barang);
+        Button deleteBtn = actionBtnDelete("Hapus", ICON_TRASH, "#e06a6a", barang);
+        actions.add(editBtn, deleteBtn);
 
         info.add(stars, name, timeRow, descDiv, actions);
         card.add(imgSection, info);
         return card;
     }
 
-    private Button actionBtnLight(String label, String iconPath, String color, Barang barang) {
+    private Button actionBtnEdit(String label, String iconPath, String color, Barang barang) {
         Button btn = new Button();
         btn.getElement().setProperty("innerHTML",
                 svgStr(iconPath, "13", color) + " <span style='margin-left:3px'>" + label + "</span>");
@@ -881,18 +924,20 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("align-items", "center")
                 .set("justify-content", "center")
                 .set("transition", "all 0.2s");
-        btn.addClickListener(e -> buildEditAssetDialog(barang).open());
+        btn.getElement().addEventListener("click", e -> {
+            buildEditAssetDialog(barang).open();
+        }).addEventData("event.stopPropagation()");
         return btn;
     }
 
-    private Button actionBtnLightGreen(String label, String iconPath, Barang barang) {
+    private Button actionBtnDelete(String label, String iconPath, String color, Barang barang) {
         Button btn = new Button();
         btn.getElement().setProperty("innerHTML",
-                svgStr(iconPath, "13", "#3a7a5a") + " <span style='margin-left:3px'>" + label + "</span>");
+                svgStr(iconPath, "13", color) + " <span style='margin-left:3px'>" + label + "</span>");
         btn.getStyle()
-                .set("background", "rgba(58,122,90,0.08)")
-                .set("color", "#3a7a5a")
-                .set("border", "1px solid rgba(58,122,90,0.18)")
+                .set("background", "rgba(224,106,106,0.08)")
+                .set("color", color)
+                .set("border", "1px solid rgba(224,106,106,0.18)")
                 .set("border-radius", "8px")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-size", "12px")
@@ -904,7 +949,9 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("align-items", "center")
                 .set("justify-content", "center")
                 .set("transition", "all 0.2s");
-        btn.addClickListener(e -> showBarangDetail(barang));
+        btn.getElement().addEventListener("click", e -> {
+            confirmAndDeleteAsset(barang);
+        }).addEventData("event.stopPropagation()");
         return btn;
     }
 
@@ -920,82 +967,322 @@ public class AdminDashboardView extends HorizontalLayout {
         return row;
     }
 
+    private void confirmAndDeleteAsset(Barang barang) {
+        Dialog d = new Dialog();
+        d.setModal(true);
+        d.setWidth("380px");
+        d.getElement().getStyle()
+                .set("--lumo-base-color", "#1c3b2e")
+                .set("--lumo-body-text-color", "white");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.getStyle()
+                .set("background", "#1c3b2e")
+                .set("border-radius", "16px")
+                .set("padding", "24px")
+                .set("border", "1px solid rgba(224,106,106,0.3)");
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        Div title = new Div();
+        title.setText("Hapus Aset?");
+        title.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "18px")
+                .set("font-weight", "700")
+                .set("color", "#e06a6a")
+                .set("margin-bottom", "8px");
+
+        Div desc = new Div();
+        desc.setText("Apakah Anda yakin ingin menghapus '" + barang.getNamaBarang() + "'? Data aset ini akan dihapus secara permanen.");
+        desc.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("color", "#b8c9bf")
+                .set("margin-bottom", "20px");
+
+        Div btnRow = new Div();
+        btnRow.getStyle().set("display", "flex").set("gap", "10px").set("width", "100%");
+
+        Button cancel = dialogCancelBtn("Batal", d);
+        cancel.getStyle().set("flex", "1");
+
+        Button delete = new Button("Ya, Hapus");
+        delete.getStyle()
+                .set("background", "linear-gradient(135deg, #e06a6a 0%, #c0392b 100%)")
+                .set("color", "white")
+                .set("border", "none")
+                .set("border-radius", "8px")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-weight", "700")
+                .set("font-size", "13px")
+                .set("height", "40px")
+                .set("cursor", "pointer")
+                .set("flex", "1");
+        delete.addClickListener(e -> {
+            barangService.delete(barang.getId());
+            refreshGrid(barangService.getAllBarang());
+            d.close();
+            ok("Aset '" + barang.getNamaBarang() + "' berhasil dihapus.");
+        });
+
+        btnRow.add(cancel, delete);
+        layout.add(title, desc, btnRow);
+        d.add(layout);
+        d.open();
+    }
+
     private void showBarangDetail(Barang b) {
         Dialog d = new Dialog();
         d.setModal(true);
-        d.setWidth("420px");
+        d.setWidth("520px");
         d.getElement().getStyle()
-                .set("--lumo-base-color", "#1e2e20")
+                .set("--lumo-base-color", "#16281b")
                 .set("--lumo-body-text-color", "white");
 
         VerticalLayout content = new VerticalLayout();
         content.getStyle()
-                .set("background", "#1e2e20")
-                .set("border-radius", "16px")
-                .set("padding", "24px");
+                .set("background", "#16281b")
+                .set("border-radius", "20px")
+                .set("padding", "24px")
+                .set("border", "1px solid rgba(143,176,138,0.2)")
+                .set("box-shadow", "0 20px 50px rgba(0,0,0,0.5)");
         content.setSpacing(false);
         content.setPadding(false);
 
-        Div dTitle = new Div();
-        dTitle.getStyle()
+        // 1. Hero Image / Banner (Full image, uncropped)
+        Div heroBanner = new Div();
+        heroBanner.getStyle()
+                .set("position", "relative")
+                .set("width", "100%")
+                .set("min-height", "220px")
+                .set("max-height", "380px")
+                .set("border-radius", "14px")
+                .set("overflow", "hidden")
+                .set("margin-bottom", "18px")
+                .set("background", "rgba(10,24,15,0.7)")
+                .set("border", "1px solid rgba(143,176,138,0.15)")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("box-shadow", "0 8px 24px rgba(0,0,0,0.25)");
+
+        if (b.getFotoBarang() != null && !b.getFotoBarang().trim().isEmpty()) {
+            Image heroImg = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            heroImg.getStyle()
+                    .set("width", "100%")
+                    .set("height", "auto")
+                    .set("max-height", "380px")
+                    .set("object-fit", "contain");
+            heroBanner.add(heroImg);
+        } else {
+            Div catIconWrap = new Div();
+            catIconWrap.getElement().setProperty("innerHTML",
+                    svgStr(categoryIconPath(b.getKategori() != null ? b.getKategori().getNamaKategori() : ""), "80", "rgba(255,255,255,0.6)"));
+            heroBanner.add(catIconWrap);
+        }
+
+        // Overlay status & code badges inside Hero
+        boolean isBorrowed = b.getStatus() == Barang.Status.dipinjam;
+        boolean isRusak    = b.getStatus() == Barang.Status.rusak;
+        String badgeColor  = isBorrowed ? "#ff9f43" : isRusak ? "#ff5252" : "#2ed573";
+        String badgeBg     = isBorrowed ? "rgba(255,159,67,0.25)" : isRusak ? "rgba(255,82,82,0.25)" : "rgba(46,213,115,0.25)";
+        String badgeText   = isBorrowed ? "Borrowed" : isRusak ? "Rusak" : "Available";
+
+        Div statusChip = new Div();
+        statusChip.getStyle()
+                .set("position", "absolute")
+                .set("top", "12px")
+                .set("left", "12px")
+                .set("background", badgeBg)
+                .set("border", "1px solid " + badgeColor)
+                .set("color", badgeColor)
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "11px")
+                .set("font-weight", "700")
+                .set("padding", "4px 12px")
+                .set("border-radius", "20px")
+                .set("backdrop-filter", "blur(8px)");
+        statusChip.setText(badgeText);
+
+        Div codeChip = new Div();
+        codeChip.getStyle()
+                .set("position", "absolute")
+                .set("top", "12px")
+                .set("right", "12px")
+                .set("background", "rgba(0,0,0,0.5)")
                 .set("color", "white")
                 .set("font-family", "'Inter', sans-serif")
-                .set("font-size", "20px")
+                .set("font-size", "11px")
                 .set("font-weight", "700")
+                .set("padding", "4px 10px")
+                .set("border-radius", "8px")
+                .set("backdrop-filter", "blur(8px)");
+        codeChip.setText(b.getKodeBarang() != null ? b.getKodeBarang() : ("AST-" + String.format("%03d", b.getId())));
+
+        heroBanner.add(statusChip, codeChip);
+
+        // 2. Title & Rating Row
+        Div headerRow = new Div();
+        headerRow.getStyle()
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "space-between")
+                .set("margin-bottom", "14px")
+                .set("gap", "12px");
+
+        Div title = new Div();
+        title.setText(b.getNamaBarang());
+        title.getStyle()
+                .set("color", "white")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "22px")
+                .set("font-weight", "800")
+                .set("letter-spacing", "0.5px");
+
+        int starsCount = b.getBintangSaatIni() != null ? b.getBintangSaatIni() : 0;
+        Div stars = buildStars(starsCount);
+
+        headerRow.add(title, stars);
+
+        // 3. Stat Grid Cards (2 columns responsive)
+        Div statGrid = new Div();
+        statGrid.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "repeat(auto-fit, minmax(130px, 1fr))")
+                .set("gap", "10px")
                 .set("margin-bottom", "16px");
-        dTitle.setText("Detail: " + b.getNamaBarang());
 
-        String[][] rows = {
-            {"Kode Barang",   b.getKodeBarang()   != null ? b.getKodeBarang()   : "—"},
-            {"Kategori",      b.getKategori()      != null ? b.getKategori().getNamaKategori() : "—"},
-            {"Ruangan",       b.getRuangan()       != null ? b.getRuangan().getNamaRuangan()   : "—"},
-            {"Status",        b.getStatus()        != null ? b.getStatus().name() : "—"},
-            {"Stock",         String.valueOf(b.getStock() != null ? b.getStock() : 0)},
-            {"Rating",        (b.getBintangSaatIni() != null ? b.getBintangSaatIni() : 0) + " / 5"},
-            {"Deskripsi",     b.getDeskripsiBintang() != null ? b.getDeskripsiBintang() : "—"},
-        };
+        statGrid.add(
+            detailStatCard("KATEGORI", b.getKategori() != null ? b.getKategori().getNamaKategori() : "—", "#8fb08a"),
+            detailStatCard("RUANGAN", b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "—", "#8fb08a"),
+            detailStatCard("STOCK", String.valueOf(b.getStock() != null ? b.getStock() : 0) + " Unit", "#8fb08a")
+        );
 
-        for (String[] r : rows) {
-            Div row = new Div();
-            row.getStyle()
-                    .set("display", "flex")
-                    .set("justify-content", "space-between")
-                    .set("padding", "8px 0")
-                    .set("border-bottom", "1px solid rgba(255,255,255,0.05)");
-            Div lbl = new Div();
-            lbl.getStyle()
-                    .set("color", "rgba(184,201,191,0.65)")
-                    .set("font-family", "'Inter', sans-serif")
-                    .set("font-size", "12px");
-            lbl.setText(r[0]);
-            Div val = new Div();
-            val.getStyle()
-                    .set("color", "white")
-                    .set("font-family", "'Inter', sans-serif")
-                    .set("font-size", "12px")
-                    .set("font-weight", "600")
-                    .set("text-align", "right")
-                    .set("max-width", "200px");
-            val.setText(r[1]);
-            row.add(lbl, val);
-            content.add(row);
-        }
+        // 4. Description Box
+        Div descBox = new Div();
+        descBox.getStyle()
+                .set("background", "rgba(143,176,138,0.06)")
+                .set("border-left", "3px solid #8fb08a")
+                .set("padding", "12px 14px")
+                .set("border-radius", "0 8px 8px 0")
+                .set("margin-bottom", "20px");
+
+        Div descTitle = new Div();
+        descTitle.setText("DESKRIPSI & KONDISI");
+        descTitle.getStyle()
+                .set("color", "#8fb08a")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "10px")
+                .set("font-weight", "700")
+                .set("letter-spacing", "1.5px")
+                .set("margin-bottom", "4px");
+
+        Div descText = new Div();
+        String desc = b.getDeskripsiBintang() != null && !b.getDeskripsiBintang().isBlank()
+                ? b.getDeskripsiBintang() : "Tidak ada deskripsi tersedia untuk aset ini.";
+        descText.setText(desc);
+        descText.getStyle()
+                .set("color", "#b8c9bf")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("line-height", "1.5");
+
+        descBox.add(descTitle, descText);
+
+        // 5. Action Footer
+        Div footer = new Div();
+        footer.getStyle()
+                .set("display", "flex")
+                .set("gap", "10px")
+                .set("width", "100%");
+
+        Button editBtn = new Button("Edit Aset Ini");
+        editBtn.getStyle()
+                .set("background", "linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%)")
+                .set("color", "white")
+                .set("border", "none")
+                .set("border-radius", "10px")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-weight", "700")
+                .set("font-size", "13px")
+                .set("height", "44px")
+                .set("cursor", "pointer")
+                .set("flex", "1");
+        editBtn.addClickListener(ev -> {
+            d.close();
+            buildEditAssetDialog(b).open();
+        });
 
         Button closeBtn = new Button("Tutup", ev -> d.close());
         closeBtn.getStyle()
-                .set("background", "rgba(143,176,138,0.2)")
+                .set("background", "rgba(255,255,255,0.08)")
+                .set("color", "#b8c9bf")
+                .set("border", "1px solid rgba(255,255,255,0.15)")
+                .set("border-radius", "10px")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-weight", "600")
+                .set("font-size", "13px")
+                .set("height", "44px")
+                .set("cursor", "pointer")
+                .set("flex", "1");
+
+        footer.add(closeBtn, editBtn);
+
+        content.add(heroBanner, headerRow, statGrid, descBox, footer);
+        d.add(content);
+        d.open();
+    }
+
+    private Div detailStatCard(String label, String val, String color) {
+        Div card = new Div();
+        card.getStyle()
+                .set("background", "rgba(255,255,255,0.05)")
+                .set("border", "1px solid rgba(255,255,255,0.08)")
+                .set("border-radius", "10px")
+                .set("padding", "10px 12px");
+
+        Div lbl = new Div();
+        lbl.setText(label);
+        lbl.getStyle()
+                .set("color", "rgba(184,201,191,0.6)")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "9px")
+                .set("font-weight", "700")
+                .set("letter-spacing", "1px")
+                .set("margin-bottom", "2px");
+
+        Div v = new Div();
+        v.setText(val);
+        v.getStyle()
+                .set("color", color)
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("font-weight", "700")
+                .set("white-space", "nowrap")
+                .set("overflow", "hidden")
+                .set("text-overflow", "ellipsis");
+
+        card.add(lbl, v);
+        return card;
+    }
+
+    // ── UPLOAD BUTTON HELPER ──────────────────────────────────────────────────
+    private Button buildUploadButton(String label) {
+        Button btn = new Button(label);
+        btn.getStyle()
+                .set("background", "rgba(77,143,77,0.15)")
                 .set("color", "#8fb08a")
-                .set("border", "1px solid rgba(143,176,138,0.3)")
+                .set("border", "1.5px dashed rgba(143,176,138,0.4)")
                 .set("border-radius", "8px")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-weight", "600")
-                .set("margin-top", "16px")
-                .set("width", "100%");
-
-        content.add(dTitle);
-        content.add(closeBtn);
-        d.add(content);
-        d.open();
+                .set("font-size", "13px")
+                .set("padding", "10px 20px")
+                .set("width", "100%")
+                .set("cursor", "pointer")
+                .set("height", "44px");
+        return btn;
     }
 
     // ── ADD ASSET DIALOG ──────────────────────────────────────────────────────
@@ -1015,6 +1302,18 @@ public class AdminDashboardView extends HorizontalLayout {
         TextArea  deskripsi = dialogTextArea("Deskripsi",     "Deskripsi kondisi aset");
         IntegerField stock  = dialogIntField("Stock",          1);
         IntegerField rating = dialogIntField("Rating (1-5)",   3);
+
+        // ── Upload Foto ───────────────────────────────────────────────────
+        String[] addFotoName = {null};
+        MemoryBuffer addBuffer = new MemoryBuffer();
+        Upload addUpload = new Upload(addBuffer);
+        addUpload.setAcceptedFileTypes("image/*");
+        addUpload.setMaxFiles(1);
+        addUpload.setMaxFileSize(10 * 1024 * 1024);
+        addUpload.setUploadButton(buildUploadButton("📷  Pilih Foto Barang"));
+        addUpload.setDropLabel(new Span("atau drag & drop di sini"));
+        addUpload.setWidthFull();
+        addUpload.addSucceededListener(ev -> addFotoName[0] = ev.getFileName());
 
         ComboBox<Kategori> kategoriBox = new ComboBox<>("Kategori");
         kategoriBox.setItems(barangService.getAllKategori());
@@ -1039,6 +1338,11 @@ public class AdminDashboardView extends HorizontalLayout {
         form.add(kode, nama, kategoriBox, ruanganBox, statusBox, stock, rating, deskripsi);
         form.setColspan(deskripsi, 2);
         form.setColspan(statusBox, 2);
+        // Upload full width below the form grid
+        Div uploadLabel = new Div();
+        uploadLabel.setText("Foto Barang");
+        uploadLabel.getStyle().set("color", "rgba(184,201,191,0.75)").set("font-size", "12px").set("margin-top", "10px");
+        content.add(dTitle, hr, form, uploadLabel, addUpload);
 
         Div btnRow = new Div();
         btnRow.getStyle()
@@ -1053,6 +1357,15 @@ public class AdminDashboardView extends HorizontalLayout {
             Barang b = new Barang();
             b.setKodeBarang(kode.getValue().isBlank() ? null : kode.getValue());
             b.setNamaBarang(nama.getValue().trim());
+            // Save uploaded file
+            if (addFotoName[0] != null) {
+                try {
+                    String saved = FileUploadHelper.saveImage(addBuffer, addFotoName[0]);
+                    b.setFotoBarang(saved);
+                } catch (Exception ex) {
+                    err("Gagal simpan foto: " + ex.getMessage()); return;
+                }
+            }
             b.setKategori(kategoriBox.getValue());
             b.setRuangan(ruanganBox.getValue());
             b.setStatus(statusBox.getValue() != null ? statusBox.getValue() : Barang.Status.tersedia);
@@ -1066,7 +1379,7 @@ public class AdminDashboardView extends HorizontalLayout {
         });
 
         btnRow.add(cancel, save);
-        content.add(dTitle, hr, form, btnRow);
+        content.add(btnRow);
         d.add(content);
         return d;
     }
@@ -1075,7 +1388,8 @@ public class AdminDashboardView extends HorizontalLayout {
     private Dialog buildEditAssetDialog(Barang barang) {
         Dialog d = new Dialog();
         d.setModal(true);
-        d.setWidth("520px");
+        d.setWidth("540px");
+        d.getElement().getStyle().set("max-width", "90vw");
 
         VerticalLayout content = dialogLayout();
 
@@ -1083,11 +1397,61 @@ public class AdminDashboardView extends HorizontalLayout {
         Hr hr = new Hr();
         hr.getStyle().set("border-color", "rgba(143,176,138,0.15)").set("margin", "4px 0 16px");
 
+        // Photo Preview Box
+        Div previewWrap = new Div();
+        previewWrap.getStyle()
+                .set("width", "100%")
+                .set("height", "130px")
+                .set("border-radius", "10px")
+                .set("overflow", "hidden")
+                .set("margin-bottom", "14px")
+                .set("background", "rgba(0,0,0,0.2)")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("border", "1px dashed rgba(143,176,138,0.3)");
+
+        String initialFoto = barang.getFotoBarang() != null ? barang.getFotoBarang().trim() : "";
+        Image photoPreview = new Image();
+        photoPreview.getStyle()
+                .set("width", "100%")
+                .set("height", "100%")
+                .set("object-fit", "cover");
+
+        if (!initialFoto.isEmpty()) {
+            photoPreview.setSrc("images/" + initialFoto);
+            previewWrap.add(photoPreview);
+        } else {
+            Span noImg = new Span("Pratinjau Foto Aset");
+            noImg.getStyle().set("color", "rgba(184,201,191,0.5)").set("font-size", "12px");
+            previewWrap.add(noImg);
+        }
+
         TextField kode      = dialogTextField("Kode Barang",  barang.getKodeBarang() != null ? barang.getKodeBarang() : "");
         TextField nama      = dialogTextField("Nama Barang",  barang.getNamaBarang());
         TextArea  deskripsi = dialogTextArea("Deskripsi",     barang.getDeskripsiBintang() != null ? barang.getDeskripsiBintang() : "");
         IntegerField stock  = dialogIntField("Stock",          barang.getStock() != null ? barang.getStock() : 0);
         IntegerField rating = dialogIntField("Rating (1-5)",   barang.getBintangSaatIni() != null ? barang.getBintangSaatIni() : 3);
+
+        // ── Upload Foto ───────────────────────────────────────────────────
+        String[] editFotoName = {null};
+        MemoryBuffer editBuffer = new MemoryBuffer();
+        Upload editUpload = new Upload(editBuffer);
+        editUpload.setAcceptedFileTypes("image/*");
+        editUpload.setMaxFiles(1);
+        editUpload.setMaxFileSize(10 * 1024 * 1024);
+        editUpload.setUploadButton(buildUploadButton(initialFoto.isEmpty() ? "📷  Pilih Foto Baru" : "📷  Ganti Foto"));
+        editUpload.setDropLabel(new Span("atau drag & drop di sini"));
+        editUpload.setWidthFull();
+        editUpload.addSucceededListener(ev -> {
+            editFotoName[0] = ev.getFileName();
+            // Live preview update
+            previewWrap.removeAll();
+            photoPreview.setSrc("data:image/png;base64,iVBORw0KGgo="); // placeholder flash
+            Span loaded = new Span("✅ Foto dipilih: " + ev.getFileName());
+            loaded.getStyle().set("color", "#8fb08a").set("font-size", "12px");
+            previewWrap.add(loaded);
+        });
 
         ComboBox<Kategori> kategoriBox = new ComboBox<>("Kategori");
         kategoriBox.setItems(barangService.getAllKategori());
@@ -1114,12 +1478,16 @@ public class AdminDashboardView extends HorizontalLayout {
         form.add(kode, nama, kategoriBox, ruanganBox, statusBox, stock, rating, deskripsi);
         form.setColspan(deskripsi, 2);
         form.setColspan(statusBox, 2);
+        Div editUploadLabel = new Div();
+        editUploadLabel.setText("Foto Barang");
+        editUploadLabel.getStyle().set("color", "rgba(184,201,191,0.75)").set("font-size", "12px").set("margin-top", "10px");
+        content.add(dTitle, hr, previewWrap, form, editUploadLabel, editUpload);
 
         Div btnRow = new Div();
         btnRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
 
         // Delete button
-        Button deleteBtn = new Button("Hapus");
+        Button deleteBtn = new Button("Hapus Aset");
         deleteBtn.getStyle()
                 .set("background", "rgba(224,106,106,0.12)")
                 .set("color", "#e06a6a")
@@ -1131,10 +1499,8 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("height", "40px")
                 .set("cursor", "pointer");
         deleteBtn.addClickListener(e -> {
-            barangService.delete(barang.getId());
-            refreshGrid(barangService.getAllBarang());
             d.close();
-            ok("Aset berhasil dihapus.");
+            confirmAndDeleteAsset(barang);
         });
 
         Button cancel = dialogCancelBtn("Batal", d);
@@ -1143,6 +1509,15 @@ public class AdminDashboardView extends HorizontalLayout {
             if (nama.getValue().isBlank()) { err("Nama barang harus diisi!"); return; }
             barang.setKodeBarang(kode.getValue().isBlank() ? null : kode.getValue());
             barang.setNamaBarang(nama.getValue().trim());
+            // Only update photo if new one was uploaded
+            if (editFotoName[0] != null) {
+                try {
+                    String saved = FileUploadHelper.saveImage(editBuffer, editFotoName[0]);
+                    barang.setFotoBarang(saved);
+                } catch (Exception ex) {
+                    err("Gagal simpan foto: " + ex.getMessage()); return;
+                }
+            }
             barang.setKategori(kategoriBox.getValue());
             barang.setRuangan(ruanganBox.getValue());
             barang.setStatus(statusBox.getValue() != null ? statusBox.getValue() : Barang.Status.tersedia);
@@ -1152,11 +1527,11 @@ public class AdminDashboardView extends HorizontalLayout {
             barangService.save(barang);
             refreshGrid(barangService.getAllBarang());
             d.close();
-            ok("Aset berhasil diperbarui!");
+            ok("Aset '" + barang.getNamaBarang() + "' berhasil diperbarui!");
         });
 
         btnRow.add(deleteBtn, cancel, save);
-        content.add(dTitle, hr, form, btnRow);
+        content.add(dTitle, hr, previewWrap, form, btnRow);
         d.add(content);
         return d;
     }
@@ -1424,4 +1799,369 @@ public class AdminDashboardView extends HorizontalLayout {
     private static final String ICON_CAMERA =
         "<path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/>" +
         "<circle cx='12' cy='13' r='4'/>";
+    private static final String ICON_TRASH =
+        "<polyline points='3 6 5 6 21 6'/><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/><line x1='10' y1='11' x2='10' y2='17'/><line x1='14' y1='11' x2='14' y2='17'/>";
+    private static final String ICON_X_CIRCLE =
+        "<circle cx='12' cy='12' r='10'/><line x1='15' y1='9' x2='9' y2='15'/><line x1='9' y1='9' x2='15' y2='15'/>";
+
+    // ════════════════════════════════════════════════════════════════════════
+    // APPROVE ASSETS VIEW
+    // ════════════════════════════════════════════════════════════════════════
+    private Div buildApproveView() {
+        Div root = new Div();
+        root.getStyle()
+                .set("flex", "1")
+                .set("overflow-y", "auto")
+                .set("padding", "28px")
+                .set("background", "#f0f4f1");
+
+        // ── Header ──────────────────────────────────────────────────────────
+        Div header = new Div();
+        header.getStyle().set("margin-bottom", "24px");
+
+        Div titleRow = new Div();
+        titleRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px").set("margin-bottom", "6px");
+        Div titleIcon = new Div();
+        titleIcon.getElement().setProperty("innerHTML", svgStr(ICON_CHECK, "22", "#4d8f4d"));
+        titleIcon.getStyle().set("display", "flex").set("align-items", "center");
+        Span titleTxt = new Span("Approve Pengembalian Barang");
+        titleTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "22px")
+                .set("font-weight", "800")
+                .set("color", "#1a2e1a");
+        titleRow.add(titleIcon, titleTxt);
+
+        Span subTxt = new Span("Verifikasi foto bukti penempatan barang dari user, lalu setujui atau tolak pengembalian.");
+        subTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("color", "#6a8a6a");
+        header.add(titleRow, subTxt);
+        root.add(header);
+
+        // ── Filter Tabs ──────────────────────────────────────────────────────
+        String[] tabs = {"Semua", "Pending", "Disetujui", "Ditolak"};
+        String[] tabKeys = {"all", "pending", "approved", "rejected"};
+        Div tabRow = new Div();
+        tabRow.getStyle()
+                .set("display", "flex").set("gap", "8px").set("margin-bottom", "20px")
+                .set("flex-wrap", "wrap");
+        Span[] tabBtns = new Span[tabs.length];
+        Div cardsContainer = new Div();
+        cardsContainer.getStyle()
+                .set("display", "flex").set("flex-direction", "column").set("gap", "16px");
+
+        for (int i = 0; i < tabs.length; i++) {
+            Span tb = new Span(tabs[i]);
+            final String key = tabKeys[i];
+            tb.getStyle()
+                    .set("padding", "6px 18px")
+                    .set("border-radius", "20px")
+                    .set("font-family", "'Inter', sans-serif")
+                    .set("font-size", "12px")
+                    .set("font-weight", "600")
+                    .set("cursor", "pointer")
+                    .set("transition", "all 0.2s");
+            if (i == 0) {
+                tb.getStyle().set("background", "#4d8f4d").set("color", "white");
+            } else {
+                tb.getStyle().set("background", "rgba(77,143,77,0.10)").set("color", "#4d8f4d");
+            }
+            tabBtns[i] = tb;
+            final int fi = i;
+            tb.addClickListener(e2 -> {
+                for (Span s : tabBtns)
+                    s.getStyle().set("background", "rgba(77,143,77,0.10)").set("color", "#4d8f4d");
+                tabBtns[fi].getStyle().set("background", "#4d8f4d").set("color", "white");
+                refreshApproveCards(cardsContainer, key);
+            });
+            tabRow.add(tb);
+        }
+        root.add(tabRow);
+
+        // ── Cards ───────────────────────────────────────────────────────────
+        root.add(cardsContainer);
+        refreshApproveCards(cardsContainer, "all");
+
+        return root;
+    }
+
+    private void refreshApproveCards(Div container, String filter) {
+        container.removeAll();
+        java.util.List<Pengembalian> list;
+        if ("pending".equals(filter)) {
+            list = pinjamanService.getPendingPengembalian();
+        } else {
+            list = pinjamanService.getAllPengembalian();
+        }
+
+        if ("approved".equals(filter)) {
+            list = list.stream()
+                    .filter(p -> p.getStatusAcc() == Pengembalian.StatusAcc.approved)
+                    .collect(java.util.stream.Collectors.toList());
+        } else if ("rejected".equals(filter)) {
+            list = list.stream()
+                    .filter(p -> p.getStatusAcc() == Pengembalian.StatusAcc.rejected)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        if (list.isEmpty()) {
+            Div empty = new Div();
+            empty.getStyle()
+                    .set("text-align", "center").set("padding", "60px 20px")
+                    .set("color", "#8aab8a").set("font-family", "'Inter', sans-serif")
+                    .set("font-size", "14px");
+            empty.setText("Tidak ada data pengembalian untuk filter ini.");
+            container.add(empty);
+            return;
+        }
+
+        for (Pengembalian p : list) {
+            container.add(buildReturnCard(p, container, filter));
+        }
+    }
+
+    private Div buildReturnCard(Pengembalian p, Div container, String filter) {
+        PinjamanDetail detail = p.getPinjamanDetail();
+        Barang barang = detail != null ? detail.getBarang() : null;
+        User borrower = detail != null && detail.getPinjaman() != null
+                ? detail.getPinjaman().getUser() : null;
+
+        Div card = new Div();
+        card.getStyle()
+                .set("background", "white")
+                .set("border-radius", "16px")
+                .set("padding", "22px 24px")
+                .set("box-shadow", "0 2px 12px rgba(0,0,0,0.08)")
+                .set("border", "1px solid rgba(0,0,0,0.06)")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("gap", "16px");
+
+        // ── Status badge & ID row ─────────────────────────────────────────
+        Div topRow = new Div();
+        topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
+
+        Span statusBadge = new Span();
+        String statusLabel;
+        String statusBg;
+        String statusColor;
+        switch (p.getStatusAcc()) {
+            case approved -> { statusLabel = "✔ Disetujui"; statusBg = "#e8f5e9"; statusColor = "#2e7d32"; }
+            case rejected -> { statusLabel = "✘ Ditolak"; statusBg = "#ffebee"; statusColor = "#c62828"; }
+            default       -> { statusLabel = "⏳ Pending"; statusBg = "#fff8e1"; statusColor = "#e65100"; }
+        }
+        statusBadge.setText(statusLabel);
+        statusBadge.getStyle()
+                .set("background", statusBg).set("color", statusColor)
+                .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
+                .set("font-weight", "700").set("padding", "4px 12px")
+                .set("border-radius", "20px");
+
+        Span idSpan = new Span("ID Pengembalian #" + p.getId());
+        idSpan.getStyle()
+                .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                .set("color", "#9aaa9a").set("margin-left", "auto");
+
+        topRow.add(statusBadge, idSpan);
+        card.add(topRow);
+
+        // ── Details grid ─────────────────────────────────────────────────
+        Div grid = new Div();
+        grid.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "1fr 1fr")
+                .set("gap", "10px 24px");
+
+        // Borrower info
+        String borrowerName = borrower != null ? borrower.getNamaLengkap() : "-";
+        String borrowerClass = borrower != null && borrower.getKelas() != null ? borrower.getKelas() : "-";
+        grid.add(detailField("👤 Peminjam", borrowerName + " (" + borrowerClass + ")"));
+
+        // Barang info
+        String barangName = barang != null ? barang.getNamaBarang() : "-";
+        String barangCode = barang != null && barang.getKodeBarang() != null ? " [" + barang.getKodeBarang() + "]" : "";
+        grid.add(detailField("📦 Barang", barangName + barangCode));
+
+        // Ruangan pemakaian - stored in PinjamanDetail
+        String ruangan = detail != null && detail.getRuangan() != null
+                ? detail.getRuangan().getNamaRuangan() : "-";
+        grid.add(detailField("🏫 Ruangan Pemakaian", ruangan));
+
+        // Tujuan peminjaman - stored in PinjamanDetail
+        String tujuan = detail != null && detail.getTujuanPinjam() != null
+                ? detail.getTujuanPinjam() : "-";
+        grid.add(detailField("📋 Tujuan", tujuan));
+
+        // Catatan kondisi user
+        if (p.getCatatanKondisi() != null && !p.getCatatanKondisi().isBlank()) {
+            grid.add(detailField("💬 Catatan User", p.getCatatanKondisi()));
+        }
+
+        // Admin yang menyetujui
+        if (p.getAdminAcc() != null) {
+            grid.add(detailField("👨‍💼 Di-review oleh", p.getAdminAcc().getNamaLengkap()));
+        }
+        if (p.getCatatanAdmin() != null && !p.getCatatanAdmin().isBlank()) {
+            grid.add(detailField("📝 Catatan Admin", p.getCatatanAdmin()));
+        }
+
+        card.add(grid);
+
+        // ── Foto Bukti Pengembalian ─────────────────────────────────────
+        if (p.getFotoPengembalian() != null && !p.getFotoPengembalian().isBlank()) {
+            Div fotoSection = new Div();
+            fotoSection.getStyle()
+                    .set("background", "#f7faf7")
+                    .set("border-radius", "12px")
+                    .set("padding", "14px")
+                    .set("border", "1px solid rgba(77,143,77,0.15)");
+            Span fotoLabel = new Span("📸 Foto Bukti Penempatan Barang:");
+            fotoLabel.getStyle()
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("font-weight", "600").set("color", "#4d6a4d").set("display", "block")
+                    .set("margin-bottom", "10px");
+
+            String imgSrc = "images/" + p.getFotoPengembalian();
+            Image fotoImg = new Image(imgSrc, "Foto pengembalian");
+            fotoImg.getStyle()
+                    .set("width", "100%")
+                    .set("max-width", "360px")
+                    .set("max-height", "240px")
+                    .set("object-fit", "contain")
+                    .set("border-radius", "10px")
+                    .set("border", "1px solid rgba(0,0,0,0.1)")
+                    .set("display", "block")
+                    .set("cursor", "pointer");
+            // Click to expand
+            fotoImg.addClickListener(ie -> {
+                Dialog imgDialog = new Dialog();
+                imgDialog.setWidth("90vw");
+                imgDialog.setMaxWidth("700px");
+                Image big = new Image(imgSrc, "Foto besar");
+                big.setWidth("100%");
+                big.getStyle().set("border-radius", "10px");
+                imgDialog.add(big);
+                imgDialog.open();
+            });
+            fotoSection.add(fotoLabel, fotoImg);
+            card.add(fotoSection);
+        } else {
+            Div noFoto = new Div();
+            noFoto.getStyle()
+                    .set("background", "#fff8f0").set("border-radius", "10px")
+                    .set("padding", "10px 14px").set("border", "1px solid #f0c090")
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("color", "#a0601a");
+            noFoto.setText("⚠️ Tidak ada foto bukti yang diunggah.");
+            card.add(noFoto);
+        }
+
+        // ── Action Buttons (only for pending) ────────────────────────────
+        if (p.getStatusAcc() == Pengembalian.StatusAcc.pending) {
+            Div actionRow = new Div();
+            actionRow.getStyle()
+                    .set("display", "flex").set("gap", "12px")
+                    .set("margin-top", "4px").set("flex-wrap", "wrap");
+
+            Button approveBtn = new Button("✔ Setujui Pengembalian");
+            approveBtn.getStyle()
+                    .set("background", "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
+                    .set("color", "white").set("font-weight", "700")
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                    .set("border", "none").set("border-radius", "10px")
+                    .set("padding", "0 20px").set("height", "42px").set("cursor", "pointer")
+                    .set("flex", "1");
+            approveBtn.addClickListener(e -> {
+                pinjamanService.approvePengembalian(p, currentUser);
+                // Update badge
+                int pending = pinjamanService.getPendingPengembalian().size();
+                navApproveBadge.setText(String.valueOf(pending));
+                navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
+                ok("✔ Pengembalian #" + p.getId() + " berhasil disetujui!");
+                refreshApproveCards(container, filter);
+            });
+
+            Button rejectBtn = new Button("✘ Tolak");
+            rejectBtn.getStyle()
+                    .set("background", "white").set("color", "#c62828")
+                    .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
+                    .set("font-size", "13px").set("border", "1px solid #ef9a9a")
+                    .set("border-radius", "10px").set("padding", "0 20px")
+                    .set("height", "42px").set("cursor", "pointer");
+            rejectBtn.addClickListener(e -> {
+                // Rejection dialog with admin note
+                Dialog rejectDialog = new Dialog();
+                rejectDialog.setWidth("420px");
+
+                Div dHeader = new Div();
+                dHeader.getStyle().set("margin-bottom", "16px");
+                Span dTitle = new Span("Tolak Pengembalian");
+                dTitle.getStyle()
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
+                        .set("font-weight", "700").set("color", "#c62828").set("display", "block");
+                Span dSub = new Span("Tambahkan catatan alasan penolakan untuk dilihat user.");
+                dSub.getStyle()
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                        .set("color", "#9a8a8a").set("margin-top", "4px").set("display", "block");
+                dHeader.add(dTitle, dSub);
+
+                TextArea catatanField = new TextArea("Catatan Penolakan (Opsional)");
+                catatanField.setPlaceholder("Contoh: Foto tidak jelas / Barang belum dikembalikan ke tempat...");
+                catatanField.setWidthFull();
+                catatanField.setHeight("100px");
+
+                Div dBtns = new Div();
+                dBtns.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
+
+                Button confirmReject = new Button("Konfirmasi Tolak");
+                confirmReject.getStyle()
+                        .set("background", "#c62828").set("color", "white").set("font-weight", "700")
+                        .set("font-family", "'Inter', sans-serif").set("border", "none")
+                        .set("border-radius", "10px").set("padding", "0 18px").set("height", "40px")
+                        .set("cursor", "pointer").set("flex", "1");
+                confirmReject.addClickListener(ce -> {
+                    pinjamanService.rejectPengembalian(p, currentUser, catatanField.getValue());
+                    int pending = pinjamanService.getPendingPengembalian().size();
+                    navApproveBadge.setText(String.valueOf(pending));
+                    navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
+                    ok("Pengembalian #" + p.getId() + " ditolak.");
+                    rejectDialog.close();
+                    refreshApproveCards(container, filter);
+                });
+                Button cancelBtn = new Button("Batal");
+                cancelBtn.getStyle()
+                        .set("background", "white").set("color", "#555").set("font-weight", "600")
+                        .set("font-family", "'Inter', sans-serif").set("border", "1px solid #ddd")
+                        .set("border-radius", "10px").set("padding", "0 18px").set("height", "40px")
+                        .set("cursor", "pointer");
+                cancelBtn.addClickListener(ce -> rejectDialog.close());
+                dBtns.add(confirmReject, cancelBtn);
+                rejectDialog.add(dHeader, catatanField, dBtns);
+                rejectDialog.open();
+            });
+
+            actionRow.add(approveBtn, rejectBtn);
+            card.add(actionRow);
+        }
+
+        return card;
+    }
+
+    private Div detailField(String label, String value) {
+        Div d = new Div();
+        d.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "2px");
+        Span lbl = new Span(label);
+        lbl.getStyle()
+                .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
+                .set("color", "#9aaa9a").set("font-weight", "600").set("text-transform", "uppercase")
+                .set("letter-spacing", "0.5px");
+        Span val = new Span(value);
+        val.getStyle()
+                .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                .set("color", "#1a2e1a").set("font-weight", "500");
+        d.add(lbl, val);
+        return d;
+    }
 }

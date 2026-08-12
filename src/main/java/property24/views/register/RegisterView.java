@@ -37,10 +37,16 @@ public class RegisterView extends HorizontalLayout {
         setSizeFull();
         setSpacing(false);
         setPadding(false);
-        getStyle().set("overflow", "hidden");
+        getStyle()
+                .set("overflow", "auto")
+                .set("flex-wrap", "wrap");
 
         // Form on LEFT, Logo on RIGHT (mirror of login)
-        add(buildLeftPanel(), buildRightPanel());
+        Div leftPanel  = buildLeftPanel();
+        Div rightPanel = buildRightPanel();
+        leftPanel.addClassName("reg-left-panel");
+        rightPanel.addClassName("reg-right-panel");
+        add(leftPanel, rightPanel);
 
         addAttachListener(e -> {
             UI.getCurrent().getPage().addStyleSheet(
@@ -56,13 +62,15 @@ public class RegisterView extends HorizontalLayout {
         Div panel = new Div();
         panel.getStyle()
                 .set("flex", "1")
+                .set("min-width", "320px")
                 .set("background", "#1c3b2e")
                 .set("display", "flex")
                 .set("align-items", "center")
                 .set("justify-content", "center")
                 .set("position", "relative")
                 .set("overflow", "hidden")
-                .set("min-height", "100vh");
+                .set("min-height", "100vh")
+                .set("padding", "32px 0");
 
         // Decorative bubbles
         panel.add(mkBubble("130px", "rgba(143,176,138,0.08)", "-65px", "-65px", null, null));
@@ -73,8 +81,11 @@ public class RegisterView extends HorizontalLayout {
 
         // ── Form Box ────────────────────────────────────────────────────
         Div formBox = new Div();
+        formBox.addClassName("reg-formbox");
         formBox.getStyle()
-                .set("width", "390px")
+                .set("width", "100%")
+                .set("max-width", "380px")
+                .set("padding", "0 24px")
                 .set("position", "relative")
                 .set("z-index", "1");
 
@@ -250,7 +261,7 @@ public class RegisterView extends HorizontalLayout {
                 .set("justify-content", "center")
                 .set("position", "relative")
                 .set("overflow", "hidden")
-                .set("min-height", "100vh");
+                .set("min-height", "200px");
 
         // Decorative bubbles (white panel)
         panel.add(mkBubble("340px", "rgba(143,176,138,0.12)", null, null, "-170px", "-170px"));
@@ -390,12 +401,18 @@ public class RegisterView extends HorizontalLayout {
             "  box-shadow:0 10px 28px rgba(78,143,78,0.40)!important;" +
             "}" +
             "vaadin-checkbox::part(checkbox){" +
-            "  border-color:rgba(143,176,138,0.5)!important;" +
-            "  background:transparent!important;" +
+            "  border: 2px solid #8fb08a!important;" +
+            "  background: rgba(255,255,255,0.12)!important;" +
+            "  border-radius: 4px!important;" +
             "}" +
             "vaadin-checkbox[checked]::part(checkbox){" +
             "  background:#8fb08a!important;" +
             "  border-color:#8fb08a!important;" +
+            "}" +
+            "@media(max-width:700px){" +
+            "  .reg-left-panel{order:2!important;min-height:unset!important;flex:none!important;width:100%!important;padding:28px 0 40px!important;}" +
+            "  .reg-right-panel{order:1!important;min-height:200px!important;flex:none!important;width:100%!important;}" +
+            "  .reg-formbox{max-width:100%!important;}" +
             "}";
         getElement().executeJs(
             "if(!document.getElementById('p24-reg-css')){" +
