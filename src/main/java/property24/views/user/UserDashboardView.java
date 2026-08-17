@@ -1352,6 +1352,33 @@ public class UserDashboardView extends Div {
         return row;
     }
 
+    /** Detail row styled for white/light card backgrounds */
+    private Div lightDetailRow(String label, String value) {
+        Div row = new Div();
+        row.getStyle()
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("gap", "2px")
+                .set("padding", "8px 0")
+                .set("border-bottom", "1px solid #f0f4f0");
+        Span l = new Span(label);
+        l.getStyle()
+                .set("color", "#8aaa8a")
+                .set("font-size", "10px")
+                .set("font-weight", "600")
+                .set("text-transform", "uppercase")
+                .set("letter-spacing", "0.6px")
+                .set("font-family", "'Inter', sans-serif");
+        Span v = new Span(value != null && !value.isBlank() ? value : "—");
+        v.getStyle()
+                .set("color", "#1a2e1a")
+                .set("font-size", "13px")
+                .set("font-weight", "600")
+                .set("font-family", "'Inter', sans-serif");
+        row.add(l, v);
+        return row;
+    }
+
     private Div formSectionTitle(String text) {
         Div d = new Div();
         d.setText(text);
@@ -1561,19 +1588,16 @@ public class UserDashboardView extends Div {
     private void showBookingModal(Barang b) {
         Dialog d = new Dialog();
         d.setModal(true);
-        d.setWidth("92vw");
-        d.setMaxWidth("440px");
-        d.getElement().getStyle()
-                .set("--lumo-base-color", "#0f1e14")
-                .set("--lumo-body-text-color", "#ffffff")
-                .set("--lumo-secondary-text-color", "#e2f0e2")
-                .set("--lumo-contrast-70pct", "#e2f0e2")
-                .set("--vaadin-input-field-label-color", "#e2f0e2");
+        d.setWidth("min(440px, 92vw)");
+        d.getElement().getStyle().set("--lumo-overlay-border-radius", "20px");
 
         VerticalLayout layout = new VerticalLayout();
         layout.getStyle()
-                .set("background", "#0f1e14").set("border-radius", "20px")
-                .set("padding", "0").set("gap", "0");
+                .set("background", "#ffffff")
+                .set("border-radius", "20px")
+                .set("padding", "0")
+                .set("gap", "0")
+                .set("box-shadow", "0 10px 40px rgba(0,0,0,0.12)");
         layout.setSpacing(false);
         layout.setPadding(false);
 
@@ -1587,36 +1611,36 @@ public class UserDashboardView extends Div {
         Span headerTitle = new Span("📋  Ajukan Booking Barang");
         headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
 
-        Span headerSub = new Span("Permintaan Anda akan dikonfirmasi oleh admin sebelum berlaku.");
-        headerSub.getStyle().set("color", "rgba(255,255,255,0.85)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
+        Span headerSub = new Span("Reservasi barang untuk diambil di waktu mendatang. Membutuhkan persetujuan admin.");
+        headerSub.getStyle().set("color", "rgba(255,255,255,0.9)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
         headerBar.add(headerTitle, headerSub);
 
         // ── Barang info banner ───────────────────────────────────────────────
         Div infoBanner = new Div();
         infoBanner.getStyle()
-                .set("background", "rgba(255,255,255,0.08)")
-                .set("border-bottom", "1px solid rgba(255,255,255,0.1)")
+                .set("background", "#f9faf9")
+                .set("border-bottom", "1px solid #eef2ee")
                 .set("padding", "14px 22px")
                 .set("display", "flex").set("align-items", "center").set("gap", "14px");
 
         Div iconBox = new Div();
         iconBox.getStyle()
-                .set("width", "44px").set("height", "44px").set("background", "rgba(106,171,106,0.25)")
-                .set("border-radius", "10px").set("border", "1px solid rgba(106,171,106,0.5)")
+                .set("width", "44px").set("height", "44px").set("background", "#eef7ee")
+                .set("border-radius", "10px").set("border", "1px solid #c8e6c8")
                 .set("display", "flex").set("align-items", "center").set("justify-content", "center")
                 .set("flex-shrink", "0");
         iconBox.getElement().setProperty("innerHTML",
-                "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#88e088' stroke-width='2.5'>" +
+                "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#2e7d32' stroke-width='2.5'>" +
                 "<path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/></svg>");
 
         Div barangInfo = new Div();
         Span namaBarang = new Span(b.getNamaBarang());
-        namaBarang.getStyle().set("color", "white").set("font-size", "15px").set("font-weight", "800").set("display", "block");
+        namaBarang.getStyle().set("color", "#1a2e1a").set("font-size", "15px").set("font-weight", "800").set("display", "block");
 
         String katText = (b.getKategori() != null ? b.getKategori().getNamaKategori() : "—") +
                 (b.getRuangan() != null ? "  ·  " + b.getRuangan().getNamaRuangan() : "");
         Span katSpan = new Span(katText);
-        katSpan.getStyle().set("color", "#9ae09a").set("font-size", "12px").set("font-weight", "700");
+        katSpan.getStyle().set("color", "#4d8f4d").set("font-size", "12px").set("font-weight", "700");
         barangInfo.add(namaBarang, katSpan);
 
         infoBanner.add(iconBox, barangInfo);
@@ -1632,57 +1656,49 @@ public class UserDashboardView extends Div {
         if (b.getRuangan() != null) {
             ruanganBox.setValue(b.getRuangan());
         }
-        styleDarkField(ruanganBox);
 
-        // Date row
-        Div dateRow = new Div();
-        dateRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "12px").set("margin-bottom", "14px");
-
+        // Date row — split vertically to avoid overflow
         DatePicker tglAmbilPicker = new DatePicker("Tanggal Rencana Ambil");
         tglAmbilPicker.setMin(LocalDate.now());
         tglAmbilPicker.setValue(LocalDate.now());
-        tglAmbilPicker.setWidth("60%");
-        styleDarkField(tglAmbilPicker);
+        tglAmbilPicker.setWidthFull();
+        tglAmbilPicker.getStyle().set("margin-top", "12px");
 
         TimePicker jamAmbilPicker = new TimePicker("Jam Ambil");
         jamAmbilPicker.setValue(LocalTime.of(8, 0));
         jamAmbilPicker.setStep(java.time.Duration.ofMinutes(30));
-        jamAmbilPicker.setWidth("40%");
-        styleDarkField(jamAmbilPicker);
+        jamAmbilPicker.setWidthFull();
+        jamAmbilPicker.getStyle().set("margin-bottom", "14px");
 
-        dateRow.add(tglAmbilPicker, jamAmbilPicker);
-
-        TextArea catatanArea = new TextArea("Catatan / Keperluan");
+        TextArea catatanArea = new TextArea("Catatan / Keperluan *");
         catatanArea.setPlaceholder("Tuliskan keperluan atau alasan peminjaman...");
         catatanArea.setMinHeight("80px");
         catatanArea.setWidthFull();
-        styleDarkField(catatanArea);
 
         // Info note
         Div noteBox = new Div();
         noteBox.getStyle()
-                .set("background", "rgba(224,122,42,0.15)").set("border", "1px solid rgba(224,122,42,0.4)")
+                .set("background", "#fff8e1").set("border", "1px solid #ffe082")
                 .set("border-radius", "10px").set("padding", "10px 14px").set("margin-top", "14px")
                 .set("display", "flex").set("gap", "8px").set("align-items", "flex-start");
         Span noteIcon = new Span("ℹ️");
         noteIcon.getStyle().set("flex-shrink", "0").set("font-size", "14px");
-        Span noteText = new Span("Booking Anda akan masuk ke daftar antrian dan perlu disetujui oleh admin terlebih dahulu. " +
-                "Barang akan dikunci sementara untuk mencegah peminjaman oleh pengguna lain.");
-        noteText.getStyle().set("color", "#ffc288").set("font-size", "12px").set("line-height", "1.6").set("font-weight", "500");
+        Span noteText = new Span("Booking Anda akan mengunci barang sementara agar tidak dipinjam pengguna lain, dan perlu disetujui oleh admin terlebih dahulu.");
+        noteText.getStyle().set("color", "#b78103").set("font-size", "12px").set("line-height", "1.5").set("font-weight", "500");
         noteBox.add(noteIcon, noteText);
 
-        formBody.add(ruanganBox, dateRow, catatanArea, noteBox);
+        formBody.add(ruanganBox, tglAmbilPicker, jamAmbilPicker, catatanArea, noteBox);
 
         // Footer
         Div footer = new Div();
         footer.getStyle()
                 .set("display", "flex").set("gap", "10px").set("padding", "0 22px 20px")
-                .set("border-top", "1px solid rgba(255,255,255,0.07)").set("padding-top", "16px");
+                .set("border-top", "1px solid #eef2ee").set("padding-top", "16px");
 
         Button cancelBtn = new Button("Batal", ev -> d.close());
         cancelBtn.getStyle()
-                .set("flex", "1").set("background", "rgba(255,255,255,0.06)")
-                .set("color", "#8ab08a").set("border", "1px solid rgba(255,255,255,0.12)")
+                .set("flex", "1").set("background", "#f0f4f0")
+                .set("color", "#4a6a4a").set("border", "none")
                 .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
                 .set("font-weight", "600");
 
@@ -1727,11 +1743,21 @@ public class UserDashboardView extends Div {
         contentArea.add(buildTopBar("PROPERTY"));
 
         Div page = new Div();
-        page.addClassName("borrow-page");
+        page.getStyle()
+                .set("flex", "1")
+                .set("background", "#f5f7f5")
+                .set("overflow-y", "auto")
+                .set("padding", "16px 16px 80px");
 
+        // Header
+        Div header = new Div();
+        header.getStyle().set("margin-bottom", "16px");
         Span heading = new Span("Booking Saya");
-        heading.addClassName("borrow-title");
-        page.add(heading);
+        heading.getStyle().set("font-size", "20px").set("font-weight", "800").set("color", "#1a2e1a").set("display", "block");
+        Span subHeading = new Span("Daftar reservasi barang aktif dan riwayat booking Anda.");
+        subHeading.getStyle().set("font-size", "12px").set("color", "#6b8a6b").set("display", "block").set("margin-top", "2px");
+        header.add(heading, subHeading);
+        page.add(header);
 
         List<Booking> list = bookingService.getBookingsByUser(currentUser);
 
@@ -1739,11 +1765,16 @@ public class UserDashboardView extends Div {
             Div emptyBox = new Div();
             emptyBox.getStyle()
                     .set("background", "white").set("border-radius", "16px")
-                    .set("padding", "40px 20px").set("text-align", "center")
-                    .set("box-shadow", "0 2px 8px rgba(0,0,0,0.06)");
+                    .set("padding", "48px 20px").set("text-align", "center")
+                    .set("box-shadow", "0 2px 10px rgba(0,0,0,0.04)")
+                    .set("border", "1px solid rgba(0,0,0,0.06)");
+            Span emptyIcon = new Span("🔖");
+            emptyIcon.getStyle().set("font-size", "36px").set("display", "block").set("margin-bottom", "10px");
             Span emptyTxt = new Span("Belum ada riwayat booking.");
-            emptyTxt.getStyle().set("color", "#666").set("font-size", "14px").set("font-weight", "600");
-            emptyBox.add(emptyTxt);
+            emptyTxt.getStyle().set("color", "#1a2e1a").set("font-size", "14px").set("font-weight", "700").set("display", "block");
+            Span emptySub = new Span("Pilih barang dari Dashboard lalu klik tombol 'Booking' untuk mereservasi barang.");
+            emptySub.getStyle().set("color", "#6b8a6b").set("font-size", "12px").set("margin-top", "4px").set("display", "block");
+            emptyBox.add(emptyIcon, emptyTxt, emptySub);
             page.add(emptyBox);
         } else {
             DateTimeFormatter dtFmt = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
@@ -1751,33 +1782,62 @@ public class UserDashboardView extends Div {
             for (Booking bk : list) {
                 Div card = new Div();
                 card.getStyle()
-                        .set("background", "#16281b").set("border-radius", "16px")
-                        .set("padding", "18px 20px").set("margin-bottom", "14px")
-                        .set("border", "1px solid rgba(143,176,138,0.2)");
+                        .set("background", "#ffffff")
+                        .set("border-radius", "16px")
+                        .set("padding", "18px 20px")
+                        .set("margin-bottom", "14px")
+                        .set("box-shadow", "0 2px 10px rgba(0,0,0,0.04)")
+                        .set("border", "1px solid rgba(0,0,0,0.06)");
 
                 Div topRow = new Div();
                 topRow.getStyle().set("display", "flex").set("justify-content", "space-between")
-                        .set("align-items", "center").set("margin-bottom", "10px");
+                        .set("align-items", "center").set("margin-bottom", "12px");
 
                 String namaB = bk.getBarang() != null ? bk.getBarang().getNamaBarang() : "Barang # " + bk.getId();
                 Span itemName = new Span(namaB);
-                itemName.getStyle().set("color", "white").set("font-size", "15px").set("font-weight", "800");
+                itemName.getStyle().set("color", "#1a2e1a").set("font-size", "15px").set("font-weight", "800");
 
-                String stText = bk.getStatus() != null ? bk.getStatus().name().toUpperCase().replace("_", " ") : "—";
-                String stColor = switch (bk.getStatus()) {
-                    case menunggu_persetujuan -> "#f0a868";
-                    case disetujui -> "#4caf50";
-                    case diambil -> "#2196f3";
-                    case ditolak -> "#ff5252";
-                    case dibatalkan -> "#888888";
-                    case kedaluwarsa -> "#ff5252";
-                };
+                String stText;
+                String stBg;
+                String stColor;
+                String stBorder;
+
+                switch (bk.getStatus()) {
+                    case menunggu_persetujuan -> {
+                        stText = "⏳ MENUNGGU ACC";
+                        stBg = "#fff3e0"; stColor = "#e65100"; stBorder = "#ffe0b2";
+                    }
+                    case disetujui -> {
+                        stText = "✅ DISETUJUI (SIAP DIAMBIL)";
+                        stBg = "#e8f5e9"; stColor = "#2e7d32"; stBorder = "#a5d6a7";
+                    }
+                    case diambil -> {
+                        stText = "📦 SUDAH DIAMBIL";
+                        stBg = "#e3f2fd"; stColor = "#1565c0"; stBorder = "#90caf9";
+                    }
+                    case ditolak -> {
+                        stText = "❌ DITOLAK";
+                        stBg = "#ffebee"; stColor = "#c62828"; stBorder = "#ef9a9a";
+                    }
+                    case dibatalkan -> {
+                        stText = "🚫 DIBATALKAN";
+                        stBg = "#f5f5f5"; stColor = "#616161"; stBorder = "#e0e0e0";
+                    }
+                    case kedaluwarsa -> {
+                        stText = "⏰ KEDALUWARSA";
+                        stBg = "#ffebee"; stColor = "#c62828"; stBorder = "#ef9a9a";
+                    }
+                    default -> {
+                        stText = "—"; stBg = "#f5f5f5"; stColor = "#616161"; stBorder = "#e0e0e0";
+                    }
+                }
+
                 Span stBadge = new Span(stText);
                 stBadge.getStyle()
-                        .set("background", stColor + "22").set("color", stColor)
+                        .set("background", stBg).set("color", stColor)
                         .set("font-size", "10px").set("font-weight", "700")
-                        .set("padding", "3px 8px").set("border-radius", "12px")
-                        .set("border", "1px solid " + stColor);
+                        .set("padding", "4px 10px").set("border-radius", "12px")
+                        .set("border", "1px solid " + stBorder);
 
                 topRow.add(itemName, stBadge);
                 card.add(topRow);
@@ -1788,39 +1848,45 @@ public class UserDashboardView extends Div {
                 String ru = bk.getRuangan() != null ? bk.getRuangan().getNamaRuangan() :
                         (bk.getBarang() != null && bk.getBarang().getRuangan() != null ? bk.getBarang().getRuangan().getNamaRuangan() : "—");
 
-                card.add(infoRow("Ruang Pemakaian", ru));
-                card.add(infoRow("Waktu Booking", tglB));
-                card.add(infoRow("Rencana Ambil", tglR));
-                card.add(infoRow("Batas Waktu (Expiry)", tglExp));
+                Div infoGrid = new Div();
+                infoGrid.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "0");
+                infoGrid.add(lightDetailRow("Ruang Pemakaian", ru));
+                infoGrid.add(lightDetailRow("Waktu Booking", tglB));
+                infoGrid.add(lightDetailRow("Rencana Ambil", tglR));
+                infoGrid.add(lightDetailRow("Batas Waktu (Expiry)", tglExp));
                 if (bk.getCatatan() != null && !bk.getCatatan().isBlank()) {
-                    card.add(infoRow("Catatan", bk.getCatatan()));
+                    infoGrid.add(lightDetailRow("Catatan", bk.getCatatan()));
                 }
+                card.add(infoGrid);
 
                 if (bk.getStatus() == Booking.BookingStatus.menunggu_persetujuan || bk.getStatus() == Booking.BookingStatus.disetujui) {
+                    Hr divider = new Hr();
+                    divider.getStyle().set("border-color", "#eef2ee").set("margin", "12px 0 8px");
+                    card.add(divider);
+
                     Div actionRow = new Div();
-                    actionRow.getStyle().set("margin-top", "12px").set("display", "flex").set("gap", "10px").set("justify-content", "flex-end");
+                    actionRow.getStyle().set("display", "flex").set("gap", "10px").set("justify-content", "flex-end");
 
                     Button cancelBtn = new Button("Batalkan Booking", ev -> {
                         Dialog confirmDialog = new Dialog();
                         confirmDialog.setModal(true);
-                        confirmDialog.setWidth("350px");
-                        confirmDialog.getElement().getStyle().set("--lumo-base-color", "#0f1e14").set("--lumo-body-text-color", "white");
-                        
+                        confirmDialog.setWidth("360px");
+
                         VerticalLayout dLayout = new VerticalLayout();
-                        dLayout.getStyle().set("background", "#0f1e14").set("border-radius", "16px").set("padding", "20px");
-                        
+                        dLayout.getStyle().set("background", "#ffffff").set("border-radius", "16px").set("padding", "20px");
+
                         Span confirmTitle = new Span("Batalkan Booking?");
-                        confirmTitle.getStyle().set("color", "white").set("font-size", "16px").set("font-weight", "bold");
-                        
-                        Span msg = new Span("Apakah Anda yakin ingin membatalkan booking ini?");
-                        msg.getStyle().set("color", "#b8c9bf").set("font-size", "13px");
-                        
+                        confirmTitle.getStyle().set("color", "#c62828").set("font-size", "16px").set("font-weight", "bold");
+
+                        Span msg = new Span("Apakah Anda yakin ingin membatalkan booking barang ini?");
+                        msg.getStyle().set("color", "#4a6a4a").set("font-size", "13px");
+
                         Div footer = new Div();
                         footer.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px").set("width", "100%");
-                        
+
                         Button noBtn = new Button("Tidak", e -> confirmDialog.close());
-                        noBtn.getStyle().set("flex", "1").set("background", "rgba(255,255,255,0.06)").set("color", "white").set("border-radius", "8px");
-                        
+                        noBtn.getStyle().set("flex", "1").set("background", "#f0f4f0").set("color", "#4a6a4a").set("border-radius", "8px");
+
                         Button yesBtn = new Button("Ya, Batalkan", e -> {
                             try {
                                 bookingService.cancelBooking(bk, currentUser);
@@ -1831,20 +1897,20 @@ public class UserDashboardView extends Div {
                                 err(ex.getMessage());
                             }
                         });
-                        yesBtn.getStyle().set("flex", "1").set("background", "linear-gradient(135deg,#e02a2a,#b31717)").set("color", "white").set("border", "none").set("border-radius", "8px");
-                        
+                        yesBtn.getStyle().set("flex", "1").set("background", "#c62828").set("color", "white").set("border", "none").set("border-radius", "8px");
+
                         footer.add(noBtn, yesBtn);
                         dLayout.add(confirmTitle, msg, footer);
                         confirmDialog.add(dLayout);
                         confirmDialog.open();
                     });
                     cancelBtn.getStyle()
-                            .set("background", "rgba(255,82,82,0.1)").set("color", "#ff5252")
-                            .set("border", "1px solid rgba(255,82,82,0.3)").set("border-radius", "8px")
+                            .set("background", "#ffebee").set("color", "#c62828")
+                            .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
                             .set("padding", "6px 16px").set("font-size", "12px").set("font-weight", "700").set("cursor", "pointer");
 
                     if (bk.getStatus() == Booking.BookingStatus.disetujui) {
-                        Button pinjamBtn = new Button("Pinjam", ev -> showFinalizeBookingDialog(bk));
+                        Button pinjamBtn = new Button("📦 Ambil & Pinjam", ev -> showFinalizeBookingDialog(bk));
                         pinjamBtn.getStyle()
                                 .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
                                 .set("color", "white").set("border", "none").set("border-radius", "8px")
@@ -1871,17 +1937,12 @@ public class UserDashboardView extends Div {
         d.setModal(true);
         d.setWidth("92vw");
         d.setMaxWidth("440px");
-        d.getElement().getStyle()
-                .set("--lumo-base-color", "#0f1e14")
-                .set("--lumo-body-text-color", "#ffffff")
-                .set("--lumo-secondary-text-color", "#e2f0e2")
-                .set("--lumo-contrast-70pct", "#e2f0e2")
-                .set("--vaadin-input-field-label-color", "#e2f0e2");
 
         VerticalLayout layout = new VerticalLayout();
         layout.getStyle()
-                .set("background", "#0f1e14").set("border-radius", "20px")
-                .set("padding", "0").set("gap", "0");
+                .set("background", "#ffffff").set("border-radius", "20px")
+                .set("padding", "0").set("gap", "0")
+                .set("box-shadow", "0 10px 40px rgba(0,0,0,0.12)");
         layout.setSpacing(false);
         layout.setPadding(false);
 
@@ -1892,11 +1953,11 @@ public class UserDashboardView extends Div {
                 .set("padding", "18px 22px 16px")
                 .set("border-radius", "20px 20px 0 0");
 
-        Span headerTitle = new Span("📦 Konfirmasi Peminjaman Barang");
+        Span headerTitle = new Span("📦 Konfirmasi Pengambilan Barang");
         headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
 
         Span headerSub = new Span("Booking Anda telah disetujui admin. Lengkapi data untuk mengambil barang.");
-        headerSub.getStyle().set("color", "rgba(255,255,255,0.85)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
+        headerSub.getStyle().set("color", "rgba(255,255,255,0.9)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
         headerBar.add(headerTitle, headerSub);
 
         // Read-only info section
@@ -1905,8 +1966,8 @@ public class UserDashboardView extends Div {
 
         Div infoBox = new Div();
         infoBox.getStyle()
-                .set("background", "rgba(255,255,255,0.06)")
-                .set("border", "1px solid rgba(255,255,255,0.1)")
+                .set("background", "#f9faf9")
+                .set("border", "1px solid #eef2ee")
                 .set("border-radius", "12px")
                 .set("padding", "14px 16px")
                 .set("margin-bottom", "16px");
@@ -1916,16 +1977,15 @@ public class UserDashboardView extends Div {
                 (bk.getBarang() != null && bk.getBarang().getRuangan() != null ? bk.getBarang().getRuangan().getNamaRuangan() : "—");
         String catatanVal = (bk.getCatatan() != null && !bk.getCatatan().isBlank()) ? bk.getCatatan() : "Keperluan Peminjaman";
 
-        infoBox.add(infoRow("Barang", namaBarangVal));
-        infoBox.add(infoRow("Ruang Pemakaian", ruanganVal));
-        infoBox.add(infoRow("Tujuan / Catatan", catatanVal));
+        infoBox.add(lightDetailRow("Barang", namaBarangVal));
+        infoBox.add(lightDetailRow("Ruang Pemakaian", ruanganVal));
+        infoBox.add(lightDetailRow("Tujuan / Catatan", catatanVal));
 
         // Inputs to fill
         DatePicker tglKembaliPicker = new DatePicker("Tanggal Rencana Kembali *");
         tglKembaliPicker.setMin(LocalDate.now());
         tglKembaliPicker.setValue(LocalDate.now().plusDays(7));
         tglKembaliPicker.setWidthFull();
-        styleDarkField(tglKembaliPicker);
 
         // Upload foto bukti
         String[] fotoNameArr = {null};
@@ -1933,7 +1993,7 @@ public class UserDashboardView extends Div {
         uploadWrapper.getStyle().set("margin-top", "14px");
         Span uploadLabel = new Span("Upload Foto Bukti *");
         uploadLabel.getStyle().set("font-size", "13px").set("font-weight", "700")
-                .set("color", "#e2f0e2").set("display", "block").set("margin-bottom", "6px");
+                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "6px");
 
         MemoryBuffer buffer = new MemoryBuffer();
         Upload upload = new Upload(buffer);
@@ -1944,7 +2004,6 @@ public class UserDashboardView extends Div {
         upload.setDropLabel(new Span("JPG, PNG, or HEIC · Max 10MB"));
         upload.setWidthFull();
         upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
-        styleDarkField(upload);
 
         uploadWrapper.add(uploadLabel, upload);
 
@@ -1954,12 +2013,12 @@ public class UserDashboardView extends Div {
         Div footer = new Div();
         footer.getStyle()
                 .set("display", "flex").set("gap", "10px").set("padding", "0 22px 20px")
-                .set("border-top", "1px solid rgba(255,255,255,0.07)").set("padding-top", "16px");
+                .set("border-top", "1px solid #eef2ee").set("padding-top", "16px");
 
         Button cancelBtn = new Button("Batal", ev -> d.close());
         cancelBtn.getStyle()
-                .set("flex", "1").set("background", "rgba(255,255,255,0.06)")
-                .set("color", "#8ab08a").set("border", "1px solid rgba(255,255,255,0.12)")
+                .set("flex", "1").set("background", "#f0f4f0")
+                .set("color", "#4a6a4a").set("border", "none")
                 .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
                 .set("font-weight", "600");
 
