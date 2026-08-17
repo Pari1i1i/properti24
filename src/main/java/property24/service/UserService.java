@@ -58,4 +58,15 @@ public class UserService {
     public User save(User user) {
         return userRepository.save(user);
     }
+
+    /** Admin: ambil semua user, urutkan by id desc (terbaru duluan) */
+    public java.util.List<User> getAllUsers() {
+        return userRepository.findAll(org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Direction.DESC, "id"));
+    }
+
+    /** Admin: hapus user by id */
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
 }

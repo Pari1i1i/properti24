@@ -29,6 +29,7 @@ import property24.service.BarangService;
 import property24.service.BookingService;
 import property24.service.PerbaikanService;
 import property24.service.PinjamanService;
+import property24.service.UserService;
 import property24.util.AuthSession;
 import property24.util.FileUploadHelper;
 
@@ -47,6 +48,7 @@ public class AdminDashboardView extends HorizontalLayout {
     private final PinjamanService pinjamanService;
     private final BookingService bookingService;
     private final PerbaikanService perbaikanService;
+    private final UserService userService;
 
     // Layout nodes that need to be refreshed
     private Div assetGridContainer;
@@ -67,14 +69,16 @@ public class AdminDashboardView extends HorizontalLayout {
     private Div navBooking;
     private Div navApprove;
     private Div navKerusakan;
-    private Div navSettings;
+    private Div navUserMgmt;
 
     public AdminDashboardView(BarangService barangService, PinjamanService pinjamanService,
-                               BookingService bookingService, PerbaikanService perbaikanService) {
+                               BookingService bookingService, PerbaikanService perbaikanService,
+                               UserService userService) {
         this.barangService = barangService;
         this.pinjamanService = pinjamanService;
         this.bookingService = bookingService;
         this.perbaikanService = perbaikanService;
+        this.userService = userService;
         this.currentUser = AuthSession.getCurrentUser();
 
         // Auth guard
@@ -174,7 +178,7 @@ public class AdminDashboardView extends HorizontalLayout {
 
         Div manageLabel = navSection("MANAJEMEN ASET");
         navKerusakan = navItem(ICON_SETTINGS,  "Kerusakan & Perbaikan", false);
-        navSettings  = navItem(ICON_SETTINGS,  "Settings",  false);
+        navUserMgmt  = navItem(ICON_DASHBOARD, "Manajemen User", false);
 
         // Pending approvals counter badge on sidebar
         int pendingCnt = pinjamanService.getPendingPengembalian().size();
@@ -210,12 +214,9 @@ public class AdminDashboardView extends HorizontalLayout {
         navBooking.addClickListener(e -> setActiveNav("booking"));
         navApprove.addClickListener(e -> setActiveNav("approve"));
         navKerusakan.addClickListener(e -> setActiveNav("kerusakan"));
-        navSettings.addClickListener(e -> {
-            setActiveNav("settings");
-            info("Halaman Settings coming soon!");
-        });
+        navUserMgmt.addClickListener(e -> setActiveNav("usermgmt"));
 
-        nav.add(navLabel, navDashboard, navBorrowed, approveLabel, navApprove, navBooking, manageLabel, navKerusakan, navSettings);
+        nav.add(navLabel, navDashboard, navBorrowed, approveLabel, navApprove, navBooking, manageLabel, navKerusakan, navUserMgmt);
 
         // ── User Info at bottom ───────────────────────────────────────────
         Div userInfo = new Div();
@@ -341,14 +342,14 @@ public class AdminDashboardView extends HorizontalLayout {
         resetNav(navBooking);
         resetNav(navApprove);
         resetNav(navKerusakan);
-        resetNav(navSettings);
+        resetNav(navUserMgmt);
 
         Div target = switch (which) {
             case "borrowed"   -> navBorrowed;
             case "booking"    -> navBooking;
             case "approve"    -> navApprove;
             case "kerusakan"  -> navKerusakan;
-            case "settings"   -> navSettings;
+            case "usermgmt"   -> navUserMgmt;
             default           -> navDashboard;
         };
         activateNav(target);
@@ -370,6 +371,8 @@ public class AdminDashboardView extends HorizontalLayout {
                 }
             } else if ("kerusakan".equals(which)) {
                 mainBodyContainer.add(buildKerusakanView());
+            } else if ("usermgmt".equals(which)) {
+                mainBodyContainer.add(buildUserManagementView());
             } else {
                 mainBodyContainer.add(buildScrollableBody());
             }
@@ -1823,6 +1826,269 @@ public class AdminDashboardView extends HorizontalLayout {
     // ════════════════════════════════════════════════════════════════════════
     // APPROVE ASSETS VIEW
     // ════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
+    // USER MANAGEMENT VIEW
+    // ════════════════════════════════════════════════════════════════════════
+    private Div buildUserManagementView() {
+        Div root = new Div();
+        root.getStyle()
+                .set("flex", "1")
+                .set("overflow-y", "auto")
+                .set("padding", "28px")
+                .set("background", "#f0f4f1");
+
+        // ── Header ──────────────────────────────────────────────────────────
+        Div header = new Div();
+        header.getStyle().set("margin-bottom", "24px");
+
+        Div titleRow = new Div();
+        titleRow.getStyle().set("display", "flex").set("align-items", "center")
+                .set("gap", "12px").set("margin-bottom", "6px");
+        Div titleIcon = new Div();
+        titleIcon.getElement().setProperty("innerHTML", svgStr(ICON_DASHBOARD, "22", "#4d8f4d"));
+        titleIcon.getStyle().set("display", "flex").set("align-items", "center");
+        Span titleTxt = new Span("Manajemen User");
+        titleTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "22px")
+                .set("font-weight", "800")
+                .set("color", "#1a2e1a");
+        titleRow.add(titleIcon, titleTxt);
+
+        Span subTxt = new Span("Kelola akun user, ubah role, dan hapus akun yang tidak diperlukan.");
+        subTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("color", "#6a8a6a");
+        header.add(titleRow, subTxt);
+        root.add(header);
+
+        // ── Search bar ──────────────────────────────────────────────────────
+        Div searchWrap = new Div();
+        searchWrap.getStyle()
+                .set("background", "white").set("border-radius", "12px")
+                .set("padding", "12px 16px").set("display", "flex")
+                .set("align-items", "center").set("gap", "10px")
+                .set("box-shadow", "0 2px 6px rgba(0,0,0,0.05)")
+                .set("margin-bottom", "20px").set("border", "1px solid #e8f0e8");
+
+        Div searchIco = new Div();
+        searchIco.getElement().setProperty("innerHTML",
+                "<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='#8fb08a' stroke-width='2'>" +
+                "<circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+
+        TextField searchField = new TextField();
+        searchField.setPlaceholder("Cari nama lengkap atau username...");
+        searchField.getStyle()
+                .set("flex", "1").set("border", "none").set("outline", "none")
+                .set("font-family", "'Inter',sans-serif").set("font-size", "13px")
+                .set("background", "transparent");
+        searchField.getElement().getStyle().set("--vaadin-input-field-border-color", "transparent");
+        searchWrap.add(searchIco, searchField);
+        root.add(searchWrap);
+
+        // ── Table container ─────────────────────────────────────────────────
+        Div tableCard = new Div();
+        tableCard.getStyle()
+                .set("background", "white").set("border-radius", "14px")
+                .set("box-shadow", "0 2px 8px rgba(0,0,0,0.06)")
+                .set("overflow", "hidden").set("border", "1px solid #e8f0e8");
+
+        // Table header row
+        Div tableHead = new Div();
+        tableHead.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "40px 1fr 1fr 120px 120px 80px")
+                .set("gap", "0")
+                .set("background", "#f5f9f5")
+                .set("border-bottom", "1px solid #e8f0e8")
+                .set("padding", "10px 20px");
+        for (String col : new String[]{"#", "Nama Lengkap", "Username / Email", "Kelas", "Role", "Aksi"}) {
+            Span th = new Span(col);
+            th.getStyle()
+                    .set("font-family", "'Inter',sans-serif").set("font-size", "10px")
+                    .set("font-weight", "700").set("color", "#8fb08a")
+                    .set("text-transform", "uppercase").set("letter-spacing", "0.8px");
+            tableHead.add(th);
+        }
+        tableCard.add(tableHead);
+
+        // Table body
+        Div tableBody = new Div();
+        tableBody.getStyle().set("display", "flex").set("flex-direction", "column");
+
+        java.util.List<User> allUsers = userService.getAllUsers();
+        String[] query = {""};
+
+        Runnable[] refreshTable = {null};
+        refreshTable[0] = () -> {
+            tableBody.removeAll();
+            String q = query[0].toLowerCase().trim();
+            java.util.List<User> filtered = allUsers.stream().filter(u -> {
+                if (q.isBlank()) return true;
+                String name = u.getNamaLengkap() != null ? u.getNamaLengkap().toLowerCase() : "";
+                String uname = u.getUsername() != null ? u.getUsername().toLowerCase() : "";
+                return name.contains(q) || uname.contains(q);
+            }).toList();
+
+            if (filtered.isEmpty()) {
+                Div empty = new Div();
+                empty.getStyle().set("padding", "32px").set("text-align", "center")
+                        .set("color", "#8fb08a").set("font-family", "'Inter',sans-serif")
+                        .set("font-size", "13px");
+                empty.setText("Tidak ada user yang cocok.");
+                tableBody.add(empty);
+                return;
+            }
+
+            for (int i = 0; i < filtered.size(); i++) {
+                User u = filtered.get(i);
+                final int rowIdx = i;
+                boolean isEven = i % 2 == 0;
+
+                Div row = new Div();
+                row.getStyle()
+                        .set("display", "grid")
+                        .set("grid-template-columns", "40px 1fr 1fr 120px 120px 80px")
+                        .set("align-items", "center")
+                        .set("gap", "0")
+                        .set("padding", "12px 20px")
+                        .set("border-bottom", "1px solid #f5f5f5")
+                        .set("background", isEven ? "white" : "#fafcfa")
+                        .set("transition", "background 0.15s");
+
+                // No
+                Span noSpan = new Span(String.valueOf(i + 1));
+                noSpan.getStyle().set("font-size", "12px").set("color", "#aaa")
+                        .set("font-family", "'Inter',sans-serif");
+
+                // Nama
+                Div namaCell = new Div();
+                namaCell.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "1px");
+                Span namaSpan = new Span(u.getNamaLengkap() != null ? u.getNamaLengkap() : "—");
+                namaSpan.getStyle().set("font-size", "13px").set("font-weight", "600")
+                        .set("color", "#1a2e1a").set("font-family", "'Inter',sans-serif");
+                // Show "KAMU" badge kalau ini currentUser
+                if (currentUser != null && currentUser.getId().equals(u.getId())) {
+                    Span youBadge = new Span("KAMU");
+                    youBadge.getStyle()
+                            .set("font-size", "8px").set("font-weight", "700")
+                            .set("background", "rgba(77,143,77,0.15)").set("color", "#4d8f4d")
+                            .set("padding", "1px 5px").set("border-radius", "4px")
+                            .set("font-family", "'Inter',sans-serif");
+                    namaCell.add(namaSpan, youBadge);
+                } else {
+                    namaCell.add(namaSpan);
+                }
+
+                // Username/Email
+                Span usernameSpan = new Span(u.getUsername() != null ? u.getUsername() : "—");
+                usernameSpan.getStyle().set("font-size", "12px").set("color", "#6a8a6a")
+                        .set("font-family", "'Inter',sans-serif");
+
+                // Kelas
+                Span kelasSpan = new Span(u.getKelas() != null && !u.getKelas().isBlank() ? u.getKelas() : "—");
+                kelasSpan.getStyle().set("font-size", "12px").set("color", "#6a8a6a")
+                        .set("font-family", "'Inter',sans-serif");
+
+                // Role badge + ComboBox inline
+                Div roleCell = new Div();
+                roleCell.getStyle().set("display", "flex").set("align-items", "center").set("gap", "6px");
+
+                ComboBox<User.Role> roleBox = new ComboBox<>();
+                roleBox.setItems(User.Role.admin, User.Role.user);
+                roleBox.setValue(u.getRole() == User.Role.teknisi ? User.Role.user : u.getRole());
+                roleBox.setWidth("100px");
+                roleBox.getStyle()
+                        .set("font-size", "11px").set("font-family", "'Inter',sans-serif")
+                        .set("--vaadin-combo-box-overlay-width", "140px");
+                roleBox.setItemLabelGenerator(r -> r == User.Role.admin ? "Admin" : "User");
+                roleBox.addValueChangeListener(ev -> {
+                    if (ev.getValue() != null && ev.getValue() != u.getRole()) {
+                        u.setRole(ev.getValue());
+                        userService.save(u);
+                        ok("Role " + u.getNamaLengkap() + " diubah ke " + ev.getValue().name());
+                    }
+                });
+                roleCell.add(roleBox);
+
+                // Aksi: tombol hapus
+                Button deleteBtn = new Button("🗑");
+                deleteBtn.getStyle()
+                        .set("background", "white").set("color", "#c62828")
+                        .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
+                        .set("cursor", "pointer").set("font-size", "14px")
+                        .set("width", "34px").set("height", "34px").set("padding", "0");
+                deleteBtn.getElement().setAttribute("title", "Hapus user ini");
+
+                // Disable hapus kalau ini currentUser sendiri
+                boolean isSelf = currentUser != null && currentUser.getId().equals(u.getId());
+                deleteBtn.setEnabled(!isSelf);
+
+                deleteBtn.addClickListener(ev -> {
+                    // Confirmation dialog
+                    Dialog confirm = new Dialog();
+                    confirm.setWidth("360px");
+
+                    Div dContent = new Div();
+                    dContent.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "14px")
+                            .set("padding", "4px");
+
+                    Span dTitle = new Span("⚠️ Hapus User?");
+                    dTitle.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "16px")
+                            .set("font-weight", "700").set("color", "#c62828");
+
+                    Span dMsg = new Span("Akun \"" + u.getNamaLengkap() + "\" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.");
+                    dMsg.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "13px")
+                            .set("color", "#5a5a5a").set("line-height", "1.5");
+
+                    Div dBtns = new Div();
+                    dBtns.getStyle().set("display", "flex").set("gap", "10px");
+
+                    Button cancelBtn = new Button("Batal");
+                    cancelBtn.getStyle()
+                            .set("flex", "1").set("height", "38px").set("background", "white")
+                            .set("color", "#5a7a5a").set("border", "1px solid #d4e8d4")
+                            .set("border-radius", "8px").set("font-family", "'Inter',sans-serif")
+                            .set("font-weight", "600").set("cursor", "pointer");
+                    cancelBtn.addClickListener(ce -> confirm.close());
+
+                    Button yesBtn = new Button("Hapus");
+                    yesBtn.getStyle()
+                            .set("flex", "1").set("height", "38px").set("background", "#c62828")
+                            .set("color", "white").set("border", "none").set("border-radius", "8px")
+                            .set("font-family", "'Inter',sans-serif").set("font-weight", "700")
+                            .set("cursor", "pointer");
+                    yesBtn.addClickListener(ce -> {
+                        userService.deleteUser(u.getId());
+                        allUsers.remove(u);
+                        ok("User \"" + u.getNamaLengkap() + "\" berhasil dihapus.");
+                        confirm.close();
+                        refreshTable[0].run();
+                    });
+
+                    dBtns.add(cancelBtn, yesBtn);
+                    dContent.add(dTitle, dMsg, dBtns);
+                    confirm.add(dContent);
+                    confirm.open();
+                });
+
+                row.add(noSpan, namaCell, usernameSpan, kelasSpan, roleCell, deleteBtn);
+                tableBody.add(row);
+            }
+        };
+
+        searchField.addValueChangeListener(ev -> {
+            query[0] = ev.getValue();
+            refreshTable[0].run();
+        });
+
+        refreshTable[0].run();
+        tableCard.add(tableBody);
+        root.add(tableCard);
+        return root;
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // BORROWED VIEW – All borrowed items across all users (Admin)
     // ════════════════════════════════════════════════════════════════════════
