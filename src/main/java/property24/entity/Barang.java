@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "barang")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@EqualsAndHashCode(of = "id")
 public class Barang {
 
     public enum Status { tersedia, dipinjam, rusak, diperbaiki }

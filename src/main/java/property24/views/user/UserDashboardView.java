@@ -564,7 +564,14 @@ public class UserDashboardView extends Div {
 
             Button borrowBtn = new Button("Pinjam", ev -> {
                 d.close();
-                if (!selectedItems.contains(b)) selectedItems.add(b);
+                boolean exists = selectedItems.stream()
+                        .anyMatch(item -> (item.getId() != null && item.getId().equals(b.getId()))
+                                || (item.getKodeBarang() != null && item.getKodeBarang().equalsIgnoreCase(b.getKodeBarang())));
+                if (!exists) {
+                    selectedItems.add(b);
+                } else {
+                    info("Barang '" + b.getNamaBarang() + "' sudah ada di dalam daftar peminjaman!");
+                }
                 switchTab("borrow");
             });
             borrowBtn.getStyle()
@@ -1639,6 +1646,11 @@ public class UserDashboardView extends Div {
     private void err(String msg) {
         Notification n = Notification.show(msg, 4000, Notification.Position.TOP_CENTER);
         n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+    }
+
+    private void info(String msg) {
+        Notification n = Notification.show(msg, 4000, Notification.Position.TOP_CENTER);
+        n.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
     }
 
     private void injectCss() {
