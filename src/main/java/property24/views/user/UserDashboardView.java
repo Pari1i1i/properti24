@@ -1831,9 +1831,53 @@ public class UserDashboardView extends Div {
                 .set("height", "44px").set("cursor", "pointer");
 
         logoutBtn.addClickListener(ev -> {
-            d.close();
-            AuthSession.logout();
-            UI.getCurrent().navigate("login");
+            Dialog confirmDialog = new Dialog();
+            confirmDialog.setWidth("320px");
+
+            Div cContent = new Div();
+            cContent.getStyle()
+                    .set("display", "flex").set("flex-direction", "column")
+                    .set("gap", "14px").set("padding", "4px");
+
+            Span cTitle = new Span("\ud83d\udeaa Konfirmasi Logout");
+            cTitle.getStyle()
+                    .set("font-family", "'Inter',sans-serif").set("font-size", "16px")
+                    .set("font-weight", "700").set("color", "#1a2e1a");
+
+            Span cMsg = new Span("Yakin mau keluar dari sesi ini?");
+            cMsg.getStyle()
+                    .set("font-family", "'Inter',sans-serif").set("font-size", "13px")
+                    .set("color", "#5a5a5a");
+
+            Div cBtns = new Div();
+            cBtns.getStyle().set("display", "flex").set("gap", "10px");
+
+            Button cCancel = new Button("Batal");
+            cCancel.getStyle()
+                    .set("flex", "1").set("height", "38px").set("background", "white")
+                    .set("color", "#5a7a5a").set("border", "1px solid #d4e8d4")
+                    .set("border-radius", "8px").set("font-family", "'Inter',sans-serif")
+                    .set("font-weight", "600").set("cursor", "pointer");
+            cCancel.addClickListener(ce -> confirmDialog.close());
+
+            Button cYes = new Button("Ya, Logout");
+            cYes.getStyle()
+                    .set("flex", "1").set("height", "38px")
+                    .set("background", "linear-gradient(135deg,#c62828,#b71c1c)")
+                    .set("color", "white").set("border", "none").set("border-radius", "8px")
+                    .set("font-family", "'Inter',sans-serif").set("font-weight", "700")
+                    .set("cursor", "pointer");
+            cYes.addClickListener(ce -> {
+                confirmDialog.close();
+                d.close();
+                AuthSession.logout();
+                UI.getCurrent().navigate("login");
+            });
+
+            cBtns.add(cCancel, cYes);
+            cContent.add(cTitle, cMsg, cBtns);
+            confirmDialog.add(cContent);
+            confirmDialog.open();
         });
 
         layout.add(saveBtn, logoutBtn);
