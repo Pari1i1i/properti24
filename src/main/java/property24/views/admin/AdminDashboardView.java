@@ -434,7 +434,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("overflow", "hidden");
 
         mainBodyContainer.add(buildScrollableBody());
-        main.add(buildTopBar(), mainBodyContainer);
+        main.add(mainBodyContainer);
         return main;
     }
 
@@ -446,7 +446,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("padding", "0 28px 28px")
                 .set("background", "#f0f4f1");
 
-        body.add(buildPageHeader(), buildStatsSection(), buildFilterAndGrid());
+        body.add(buildTopBar(), buildPageHeader(), buildStatsSection(), buildFilterAndGrid());
         return body;
     }
 
@@ -458,9 +458,13 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("align-items", "center")
                 .set("gap", "12px")
                 .set("padding", "14px 28px")
+                .set("margin", "0 -28px 0 -28px")
                 .set("border-bottom", "1px solid rgba(0,0,0,0.08)")
                 .set("background", "#ffffff")
-                .set("flex-shrink", "0");
+                .set("flex-shrink", "0")
+                .set("position", "sticky")
+                .set("top", "0")
+                .set("z-index", "10");
 
         // Search
         TextField search = new TextField();
