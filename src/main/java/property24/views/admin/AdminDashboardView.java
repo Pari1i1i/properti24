@@ -791,11 +791,12 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("box-shadow", "0 2px 8px rgba(0,0,0,0.08)");
         card.addClassName("asset-card");
 
-        boolean isBorrowed = barang.getStatus() == Barang.Status.dipinjam;
-        boolean isRusak    = barang.getStatus() == Barang.Status.rusak;
-        String badgeColor  = isBorrowed ? "#e07a2a" : isRusak ? "#e06a6a" : "#22a05a";
-        String badgeBg     = isBorrowed ? "rgba(224,122,42,0.12)" : isRusak ? "rgba(224,106,106,0.12)" : "rgba(34,160,90,0.10)";
-        String badgeText   = isBorrowed ? "Borrowed" : isRusak ? "Rusak" : "Available";
+        boolean isBorrowed   = barang.getStatus() == Barang.Status.dipinjam;
+        boolean isRusak      = barang.getStatus() == Barang.Status.rusak;
+        boolean isDiperbaiki = barang.getStatus() == Barang.Status.diperbaiki;
+        String badgeColor  = isBorrowed ? "#e07a2a" : isRusak ? "#e06a6a" : isDiperbaiki ? "#d97706" : "#22a05a";
+        String badgeBg     = isBorrowed ? "rgba(224,122,42,0.12)" : isRusak ? "rgba(224,106,106,0.12)" : isDiperbaiki ? "rgba(217,119,6,0.12)" : "rgba(34,160,90,0.10)";
+        String badgeText   = isBorrowed ? "Borrowed" : isRusak ? "Rusak" : isDiperbaiki ? "Diperbaiki" : "Available";
         String kodeBarang  = barang.getKodeBarang() != null ? barang.getKodeBarang() : ("AST-" + String.format("%03d", barang.getId()));
 
         // ── Image section ────────────────────────────────────────────────
@@ -1131,11 +1132,12 @@ public class AdminDashboardView extends HorizontalLayout {
         }
 
         // Overlay status & code badges inside Hero
-        boolean isBorrowed = b.getStatus() == Barang.Status.dipinjam;
-        boolean isRusak    = b.getStatus() == Barang.Status.rusak;
-        String badgeColor  = isBorrowed ? "#ff9f43" : isRusak ? "#ff5252" : "#2ed573";
-        String badgeBg     = isBorrowed ? "rgba(255,159,67,0.25)" : isRusak ? "rgba(255,82,82,0.25)" : "rgba(46,213,115,0.25)";
-        String badgeText   = isBorrowed ? "Borrowed" : isRusak ? "Rusak" : "Available";
+        boolean isBorrowed   = b.getStatus() == Barang.Status.dipinjam;
+        boolean isRusak      = b.getStatus() == Barang.Status.rusak;
+        boolean isDiperbaiki = b.getStatus() == Barang.Status.diperbaiki;
+        String badgeColor  = isBorrowed ? "#ff9f43" : isRusak ? "#ff5252" : isDiperbaiki ? "#ff9f43" : "#2ed573";
+        String badgeBg     = isBorrowed ? "rgba(255,159,67,0.25)" : isRusak ? "rgba(255,82,82,0.25)" : isDiperbaiki ? "rgba(255,159,67,0.25)" : "rgba(46,213,115,0.25)";
+        String badgeText   = isBorrowed ? "Borrowed" : isRusak ? "Rusak" : isDiperbaiki ? "Diperbaiki" : "Available";
 
         Div statusChip = new Div();
         statusChip.getStyle()
@@ -1375,17 +1377,17 @@ public class AdminDashboardView extends HorizontalLayout {
         ruanganBox.setWidthFull();
         styleDialogField(ruanganBox);
 
-        ComboBox<Barang.Status> statusBox = new ComboBox<>("Status");
-        statusBox.setItems(Barang.Status.values());
-        statusBox.setValue(Barang.Status.tersedia);
-        statusBox.setWidthFull();
-        styleDialogField(statusBox);
+        TextField statusField = new TextField("Status Aset");
+        statusField.setValue("TERSEDIA");
+        statusField.setReadOnly(true);
+        statusField.setWidthFull();
+        styleDialogField(statusField);
 
         FormLayout form = new FormLayout();
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
-        form.add(kode, nama, kategoriBox, ruanganBox, statusBox, stock, rating, deskripsi);
+        form.add(kode, nama, kategoriBox, ruanganBox, statusField, stock, rating, deskripsi);
         form.setColspan(deskripsi, 2);
-        form.setColspan(statusBox, 2);
+        form.setColspan(statusField, 2);
         // Upload full width below the form grid
         Div uploadLabel = new Div();
         uploadLabel.setText("Foto Barang");
@@ -1418,7 +1420,7 @@ public class AdminDashboardView extends HorizontalLayout {
             }
             b.setKategori(kategoriBox.getValue());
             b.setRuangan(ruanganBox.getValue());
-            b.setStatus(statusBox.getValue() != null ? statusBox.getValue() : Barang.Status.tersedia);
+            b.setStatus(Barang.Status.tersedia);
             b.setStock(Math.max(0, stock.getValue()));
             b.setBintangSaatIni(Math.min(5, Math.max(1, rating.getValue())));
             b.setDeskripsiBintang(deskripsi.getValue());
@@ -1517,17 +1519,18 @@ public class AdminDashboardView extends HorizontalLayout {
         ruanganBox.setWidthFull();
         styleDialogField(ruanganBox);
 
-        ComboBox<Barang.Status> statusBox = new ComboBox<>("Status");
-        statusBox.setItems(Barang.Status.values());
-        statusBox.setValue(barang.getStatus());
-        statusBox.setWidthFull();
-        styleDialogField(statusBox);
+        // Status field is read-only (managed strictly via system workflows)
+        TextField statusField = new TextField("Status Saat Ini");
+        statusField.setValue(barang.getStatus() != null ? barang.getStatus().name().toUpperCase() : "TERSEDIA");
+        statusField.setReadOnly(true);
+        statusField.setWidthFull();
+        styleDialogField(statusField);
 
         FormLayout form = new FormLayout();
         form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2));
-        form.add(kode, nama, kategoriBox, ruanganBox, statusBox, stock, rating, deskripsi);
+        form.add(kode, nama, kategoriBox, ruanganBox, statusField, stock, rating, deskripsi);
         form.setColspan(deskripsi, 2);
-        form.setColspan(statusBox, 2);
+        form.setColspan(statusField, 2);
         Div editUploadLabel = new Div();
         editUploadLabel.setText("Foto Barang");
         editUploadLabel.getStyle().set("color", "rgba(184,201,191,0.75)").set("font-size", "12px").set("margin-top", "10px");
@@ -1572,7 +1575,7 @@ public class AdminDashboardView extends HorizontalLayout {
             }
             barang.setKategori(kategoriBox.getValue());
             barang.setRuangan(ruanganBox.getValue());
-            barang.setStatus(statusBox.getValue() != null ? statusBox.getValue() : Barang.Status.tersedia);
+            // Status remains untouched (managed by system workflows)
             barang.setStock(Math.max(0, stock.getValue()));
             barang.setBintangSaatIni(Math.min(5, Math.max(1, rating.getValue())));
             barang.setDeskripsiBintang(deskripsi.getValue());
@@ -1583,7 +1586,7 @@ public class AdminDashboardView extends HorizontalLayout {
         });
 
         btnRow.add(deleteBtn, cancel, save);
-        content.add(dTitle, hr, previewWrap, form, btnRow);
+        content.add(btnRow);
         d.add(content);
         return d;
     }
@@ -1595,9 +1598,9 @@ public class AdminDashboardView extends HorizontalLayout {
     private VerticalLayout dialogLayout() {
         VerticalLayout v = new VerticalLayout();
         v.getStyle()
-                .set("background", "#182218")
-                .set("border-radius", "16px")
-                .set("padding", "24px");
+                .set("background", "#ffffff")
+                .set("border-radius", "20px")
+                .set("padding", "20px");
         v.setSpacing(false);
         v.setPadding(false);
         return v;
@@ -1606,10 +1609,10 @@ public class AdminDashboardView extends HorizontalLayout {
     private Div dialogTitle(String text) {
         Div t = new Div();
         t.getStyle()
-                .set("color", "white")
+                .set("color", "#1a2e1a")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-size", "18px")
-                .set("font-weight", "700")
+                .set("font-weight", "800")
                 .set("margin-bottom", "4px");
         t.setText(text);
         return t;
@@ -1648,30 +1651,29 @@ public class AdminDashboardView extends HorizontalLayout {
 
     private void styleDialogField(com.vaadin.flow.component.Component field) {
         field.getElement().getStyle()
-                .set("--lumo-body-text-color", "white")
-                .set("--lumo-secondary-text-color", "rgba(184,201,191,0.7)")
-                .set("--lumo-primary-color", "#8fb08a")
-                .set("--lumo-primary-text-color", "#8fb08a")
-                .set("--lumo-base-color", "#182218")
-                .set("--lumo-contrast-5pct", "rgba(255,255,255,0.05)")
-                .set("--lumo-contrast-10pct", "rgba(143,176,138,0.25)")
-                .set("--vaadin-input-field-background", "rgba(255,255,255,0.05)")
-                .set("--vaadin-input-field-border-color", "rgba(143,176,138,0.25)")
-                .set("--vaadin-input-field-value-color", "white")
-                .set("--vaadin-input-field-placeholder-color", "rgba(184,201,191,0.4)");
+                .set("--lumo-body-text-color", "#1a2e1a")
+                .set("--lumo-secondary-text-color", "#4a6a4a")
+                .set("--lumo-primary-color", "#3a9898")
+                .set("--lumo-primary-text-color", "#2d6a2d")
+                .set("--lumo-base-color", "#ffffff")
+                .set("--vaadin-input-field-background", "#f5f7f5")
+                .set("--vaadin-input-field-border-color", "#d0ded0")
+                .set("--vaadin-input-field-value-color", "#1a2e1a")
+                .set("--vaadin-input-field-label-color", "#4a6a4a")
+                .set("--vaadin-input-field-placeholder-color", "#9aaa9a");
     }
 
     private Button dialogCancelBtn(String label, Dialog d) {
         Button b = new Button(label, e -> d.close());
         b.getStyle()
-                .set("background", "rgba(255,255,255,0.05)")
-                .set("color", "rgba(184,201,191,0.8)")
-                .set("border", "1px solid rgba(255,255,255,0.1)")
-                .set("border-radius", "8px")
+                .set("background", "#f0f4f0")
+                .set("color", "#555")
+                .set("border", "none")
+                .set("border-radius", "10px")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-weight", "600")
-                .set("flex", "1")
                 .set("height", "40px")
+                .set("padding", "0 18px")
                 .set("cursor", "pointer");
         return b;
     }
@@ -2658,8 +2660,14 @@ public class AdminDashboardView extends HorizontalLayout {
         hr.getStyle().set("border-color", "rgba(143,176,138,0.15)").set("margin", "4px 0 14px");
 
         DatePicker tglKembali = new DatePicker("Tanggal Rencana Kembali");
+        tglKembali.setMin(LocalDate.now());
         tglKembali.setValue(LocalDate.now().plusDays(7));
         tglKembali.setWidthFull();
+        tglKembali.addValueChangeListener(ev -> {
+            if (ev.getValue() != null && ev.getValue().isBefore(LocalDate.now())) {
+                tglKembali.setValue(LocalDate.now());
+            }
+        });
 
         Div btnRow = new Div();
         btnRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
@@ -2738,8 +2746,8 @@ public class AdminDashboardView extends HorizontalLayout {
         root.add(header);
 
         // ── Filter Tabs ──────────────────────────────────────────────────────
-        String[] tabs    = {"Semua", "Sedang Proses", "Selesai", "Dibatalkan"};
-        String[] tabKeys = {"all", "proses", "selesai", "dibatalkan"};
+        String[] tabs    = {"📦 Barang Rusak (Gudang/Aset)", "Semua Perbaikan", "Sedang Proses", "Selesai", "Dibatalkan"};
+        String[] tabKeys = {"rusak_assets", "all", "proses", "selesai", "dibatalkan"};
         Div tabRow = new Div();
         tabRow.getStyle().set("display", "flex").set("gap", "8px")
                 .set("margin-bottom", "20px").set("flex-wrap", "wrap");
@@ -2768,7 +2776,7 @@ public class AdminDashboardView extends HorizontalLayout {
             tabRow.add(tb);
         }
         root.add(tabRow, cardsContainer);
-        refreshKerusakanCards(cardsContainer, "all");
+        refreshKerusakanCards(cardsContainer, "rusak_assets");
 
         // ── Laporkan Kerusakan Dialog ────────────────────────────────────────
         laporBtn.addClickListener(ev -> {
@@ -2854,7 +2862,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 }
                 ok("Kerusakan berhasil dilaporkan.");
                 d.close();
-                refreshKerusakanCards(cardsContainer, "all");
+                refreshKerusakanCards(cardsContainer, "rusak_assets");
                 for (Span s : tabBtns)
                     s.getStyle().set("background", "rgba(224,122,42,0.10)").set("color", "#e07a2a");
                 tabBtns[0].getStyle().set("background", "#e07a2a").set("color", "white");
@@ -2870,6 +2878,147 @@ public class AdminDashboardView extends HorizontalLayout {
 
     private void refreshKerusakanCards(Div container, String filter) {
         container.removeAll();
+
+        if ("rusak_assets".equals(filter)) {
+            List<Barang> rusakList = barangService.getByStatus(Barang.Status.rusak);
+            if (rusakList.isEmpty()) {
+                Div empty = new Div();
+                empty.getStyle()
+                        .set("text-align", "center").set("padding", "60px 20px")
+                        .set("color", "#8aab8a").set("font-family", "'Inter', sans-serif").set("font-size", "14px");
+                empty.setText("Tidak ada barang berstatus RUSAK di gudang / simpanan aset saat ini.");
+                container.add(empty);
+                return;
+            }
+
+            for (Barang b : rusakList) {
+                Div card = new Div();
+                card.getStyle()
+                        .set("background", "white").set("border-radius", "16px")
+                        .set("padding", "22px 24px").set("box-shadow", "0 2px 12px rgba(0,0,0,0.07)")
+                        .set("border", "1px solid rgba(0,0,0,0.06)")
+                        .set("display", "flex").set("flex-direction", "column").set("gap", "14px");
+
+                Div topRow = new Div();
+                topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
+
+                Span badge = new Span("🛠 BARANG RUSAK (Tersimpan di Gudang)");
+                badge.getStyle()
+                        .set("background", "#ffebee").set("color", "#c62828")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
+                        .set("font-weight", "700").set("padding", "4px 12px").set("border-radius", "20px");
+
+                Span idSpan = new Span(b.getKodeBarang() != null ? b.getKodeBarang() : "ID #" + b.getId());
+                idSpan.getStyle()
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                        .set("color", "#9aaa9a").set("margin-left", "auto");
+                topRow.add(badge, idSpan);
+                card.add(topRow);
+
+                Div grid = new Div();
+                grid.getStyle()
+                        .set("display", "grid").set("grid-template-columns", "1fr 1fr")
+                        .set("gap", "10px 24px");
+
+                grid.add(detailField("📦 Nama Barang", b.getNamaBarang()));
+                grid.add(detailField("🏷 Kategori", b.getKategori() != null ? b.getKategori().getNamaKategori() : "-"));
+                grid.add(detailField("📍 Lokasi Ruangan", b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "-"));
+                grid.add(detailField("📊 Stock", b.getStock() + " unit"));
+                card.add(grid);
+
+                Div actionRow = new Div();
+                actionRow.getStyle().set("display", "flex").set("gap", "10px").set("flex-wrap", "wrap");
+
+                Button masukanBengkelBtn = new Button("🔩 Masukkan ke Perbaikan");
+                masukanBengkelBtn.getStyle()
+                        .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
+                        .set("color", "white").set("border", "none").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 18px")
+                        .set("cursor", "pointer").set("flex", "1");
+
+                masukanBengkelBtn.addClickListener(ev -> {
+                    Dialog d = new Dialog();
+                    d.setModal(true);
+                    d.setWidth("min(420px, 92vw)");
+                    VerticalLayout content = dialogLayout();
+
+                    Span dTitle = new Span("Masukkan ke Perbaikan / Bengkel");
+                    dTitle.getStyle()
+                            .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
+                            .set("font-weight", "800").set("color", "#b35c17").set("display", "block")
+                            .set("margin-bottom", "14px");
+
+                    TextField teknisiField = new TextField("Teknisi / Vendor (Opsional)");
+                    teknisiField.setPlaceholder("Nama teknisi atau vendor perbaikan");
+                    teknisiField.setWidthFull();
+
+                    TextField biayaField = new TextField("Estimasi Biaya (Opsional)");
+                    biayaField.setPlaceholder("Contoh: 150000");
+                    biayaField.setWidthFull();
+
+                    TextArea catatanField = new TextArea("Deskripsi Perbaikan *");
+                    catatanField.setPlaceholder("Catatan pengerjaan / perbaikan...");
+                    catatanField.setMinHeight("70px");
+                    catatanField.setWidthFull();
+
+                    Div btnRow = new Div();
+                    btnRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "14px");
+
+                    Button cancel = dialogCancelBtn("Batal", d);
+                    Button confirm = new Button("Proses Perbaikan");
+                    confirm.getStyle()
+                            .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)").set("color", "white")
+                            .set("border", "none").set("border-radius", "8px").set("font-weight", "700")
+                            .set("height", "40px").set("cursor", "pointer").set("flex", "1")
+                            .set("font-family", "'Inter', sans-serif");
+
+                    confirm.addClickListener(ce -> {
+                        BigDecimal biaya = BigDecimal.ZERO;
+                        try {
+                            if (!biayaField.getValue().isBlank())
+                                biaya = new BigDecimal(biayaField.getValue().replace(",", ""));
+                        } catch (NumberFormatException ignored) {}
+
+                        RiwayatPerbaikan rp = perbaikanService.laporKerusakan(
+                                b, currentUser,
+                                catatanField.getValue().isBlank() ? "Dikirim ke perbaikan dari gudang barang rusak" : catatanField.getValue(),
+                                teknisiField.getValue(),
+                                biaya
+                        );
+                        perbaikanService.mulaiPerbaikan(rp, teknisiField.getValue());
+                        ok("Barang '" + b.getNamaBarang() + "' masuk ke status DIPERBAIKI.");
+                        d.close();
+                        refreshKerusakanCards(container, filter);
+                    });
+
+                    btnRow.add(cancel, confirm);
+                    content.add(dTitle, teknisiField, biayaField, catatanField, btnRow);
+                    d.add(content);
+                    d.open();
+                });
+
+                Button pulihkanBtn = new Button("✅ Pulihkan ke Tersedia");
+                pulihkanBtn.getStyle()
+                        .set("background", "white").set("color", "#2e7d32")
+                        .set("border", "1px solid #a5d6a7").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 16px")
+                        .set("cursor", "pointer");
+
+                pulihkanBtn.addClickListener(ev -> {
+                    b.setStatus(Barang.Status.tersedia);
+                    barangService.save(b);
+                    ok("Barang '" + b.getNamaBarang() + "' telah dipulihkan ke status TERSEDIA.");
+                    refreshKerusakanCards(container, filter);
+                });
+
+                actionRow.add(masukanBengkelBtn, pulihkanBtn);
+                card.add(actionRow);
+                container.add(card);
+            }
+            return;
+        }
 
         List<RiwayatPerbaikan> list;
         if ("proses".equals(filter)) {

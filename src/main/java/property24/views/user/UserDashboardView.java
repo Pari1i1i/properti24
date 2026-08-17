@@ -710,13 +710,39 @@ public class UserDashboardView extends Div {
         tujuanCard.add(tujuan);
         page.add(tujuanCard);
 
-        // Dates
+        // Dates with strict validation
         DatePicker tglPinjam = new DatePicker("Tanggal Pinjam *");
+        tglPinjam.setMin(LocalDate.now());
         tglPinjam.setValue(LocalDate.now());
         tglPinjam.setWidthFull();
+
         DatePicker tglKembali = new DatePicker("Tanggal Kembali *");
+        tglKembali.setMin(tglPinjam.getValue());
         tglKembali.setValue(LocalDate.now().plusDays(7));
         tglKembali.setWidthFull();
+
+        tglPinjam.addValueChangeListener(ev -> {
+            LocalDate start = ev.getValue();
+            if (start != null) {
+                if (start.isBefore(LocalDate.now())) {
+                    tglPinjam.setValue(LocalDate.now());
+                    start = LocalDate.now();
+                }
+                tglKembali.setMin(start);
+                if (tglKembali.getValue() != null && tglKembali.getValue().isBefore(start)) {
+                    tglKembali.setValue(start.plusDays(1));
+                }
+            }
+        });
+
+        tglKembali.addValueChangeListener(ev -> {
+            LocalDate end = ev.getValue();
+            LocalDate start = tglPinjam.getValue() != null ? tglPinjam.getValue() : LocalDate.now();
+            if (end != null && end.isBefore(start)) {
+                tglKembali.setValue(start.plusDays(1));
+            }
+        });
+
         Div dateCard = new Div();
         dateCard.addClassName("borrow-card");
         dateCard.getStyle().set("display", "grid")
@@ -1812,12 +1838,16 @@ public class UserDashboardView extends Div {
             ruanganBox.setValue(b.getRuangan());
         }
 
-        // Date row — split vertically to avoid overflow
         DatePicker tglAmbilPicker = new DatePicker("Tanggal Rencana Ambil");
         tglAmbilPicker.setMin(LocalDate.now());
         tglAmbilPicker.setValue(LocalDate.now());
         tglAmbilPicker.setWidthFull();
         tglAmbilPicker.getStyle().set("margin-top", "12px");
+        tglAmbilPicker.addValueChangeListener(ev -> {
+            if (ev.getValue() != null && ev.getValue().isBefore(LocalDate.now())) {
+                tglAmbilPicker.setValue(LocalDate.now());
+            }
+        });
 
         TimePicker jamAmbilPicker = new TimePicker("Jam Ambil");
         jamAmbilPicker.setValue(LocalTime.of(8, 0));
@@ -2149,6 +2179,11 @@ public class UserDashboardView extends Div {
         tglKembaliPicker.setValue(LocalDate.now().plusDays(7));
         tglKembaliPicker.setWidthFull();
         tglKembaliPicker.getStyle().set("margin-top", "4px");
+        tglKembaliPicker.addValueChangeListener(ev -> {
+            if (ev.getValue() != null && ev.getValue().isBefore(LocalDate.now())) {
+                tglKembaliPicker.setValue(LocalDate.now());
+            }
+        });
 
         // Upload foto bukti
         String[] fotoNameArr = {null};
