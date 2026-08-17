@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @Viewport("width=device-width, initial-scale=1") // Move @Viewport here
 public class
-Property24Application implements AppShellConfigurator { 
+Property24Application implements AppShellConfigurator {
     public static void main(String[] args) {
         SpringApplication.run(Property24Application.class, args);
     }

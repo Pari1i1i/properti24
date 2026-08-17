@@ -1,6 +1,6 @@
 package property24.service;
 
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import property24.entity.*;
@@ -33,7 +33,43 @@ public class PinjamanService {
         return pengembalianRepository.findByPinjamanDetailId(detail.getId());
     }
 
-    // ── WRITE ─────────────────────────────────────────────────────────────────
+    // ── DTO for detailed per-item requests ──────────────────────────────────
+    @Getter @Setter @AllArgsConstructor @NoArgsConstructor
+    public static class ItemBorrowRequest {
+        private Barang barang;
+        private Ruangan ruangan;
+        private String tujuan;
+        private LocalDate tglPinjam;
+        private LocalDate tglRencanaKembali;
+    }
+
+    @Transactional
+    public Pinjaman createPinjamanDetailed(User user, List<ItemBorrowRequest> requests, String fotoPeminjam) {
+        Pinjaman pinjaman = new Pinjaman();
+        pinjaman.setUser(user);
+        pinjaman.setFotoPeminjam(fotoPeminjam);
+        pinjaman.setStatusPinjaman(Pinjaman.StatusPinjaman.dipinjam);
+        pinjaman = pinjamanRepository.save(pinjaman);
+
+        for (ItemBorrowRequest req : requests) {
+            PinjamanDetail detail = new PinjamanDetail();
+            detail.setPinjaman(pinjaman);
+            detail.setBarang(req.getBarang());
+            detail.setRuangan(req.getRuangan());
+            detail.setTujuanPinjam(req.getTujuan());
+            detail.setTglRencanaKembali(req.getTglRencanaKembali() != null ? req.getTglRencanaKembali() : LocalDate.now());
+            detail.setSudahDikembalikan(false);
+            pinjamanDetailRepository.save(detail);
+
+            Barang b = req.getBarang();
+            if (b != null) {
+                b.setStatus(Barang.Status.dipinjam);
+                barangRepository.save(b);
+            }
+        }
+
+        return pinjaman;
+    }
 
     @Transactional
     public Pinjaman createPinjaman(User user, List<Barang> items, Ruangan ruangan,
@@ -114,6 +150,18 @@ public class PinjamanService {
                 Barang b = detail.getBarang();
                 b.setStatus(newStatus != null ? newStatus : Barang.Status.tersedia);
                 barangRepository.save(b);
+            }
+
+            // Check if all items in parent loan are now returned
+            if (detail.getPinjaman() != null) {
+                Pinjaman parent = detail.getPinjaman();
+                List<PinjamanDetail> allDetails = pinjamanDetailRepository.findByPinjamanId(parent.getId());
+                boolean allReturned = allDetails.stream()
+                        .allMatch(d -> Boolean.TRUE.equals(d.getSudahDikembalikan()));
+                if (allReturned) {
+                    parent.setStatusPinjaman(Pinjaman.StatusPinjaman.selesai);
+                    pinjamanRepository.save(parent);
+                }
             }
         }
     }

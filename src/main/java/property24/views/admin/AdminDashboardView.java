@@ -472,47 +472,6 @@ public class AdminDashboardView extends HorizontalLayout {
             refreshGrid(results);
         });
 
-        // Notification bell
-        Div notifBtn = new Div();
-        notifBtn.getStyle()
-                .set("width", "38px")
-                .set("height", "38px")
-                .set("border-radius", "10px")
-                .set("background", "rgba(0,0,0,0.04)")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "center")
-                .set("cursor", "pointer")
-                .set("position", "relative")
-                .set("border", "1px solid rgba(0,0,0,0.08)")
-                .set("transition", "background 0.2s");
-        notifBtn.getElement().setProperty("innerHTML",
-                svgStr(ICON_BELL, "18", "rgba(30,60,30,0.6)"));
-        notifBtn.setId("notif-btn");
-
-        // Notification badge
-        Div badge = new Div();
-        badge.getStyle()
-                .set("position", "absolute")
-                .set("top", "-4px")
-                .set("right", "-4px")
-                .set("width", "16px")
-                .set("height", "16px")
-                .set("border-radius", "50%")
-                .set("background", "#e07a2a")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "center");
-        Span badgeNum = new Span("3");
-        badgeNum.getStyle()
-                .set("color", "white")
-                .set("font-family", "'Inter', sans-serif")
-                .set("font-size", "9px")
-                .set("font-weight", "700");
-        badge.add(badgeNum);
-        notifBtn.add(badge);
-        notifBtn.addClickListener(e -> info("Tidak ada notifikasi baru."));
-
         // Add New Asset button
         Button addBtn = new Button("+ Add New Asset");
         addBtn.setId("add-asset-btn");
@@ -532,7 +491,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("transition", "all 0.3s ease");
         addBtn.addClickListener(e -> buildAddAssetDialog().open());
 
-        bar.add(search, notifBtn, addBtn);
+        bar.add(search, addBtn);
         return bar;
     }
 

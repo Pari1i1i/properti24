@@ -628,29 +628,44 @@ public class UserDashboardView extends Div {
         ph.add(backBtn, phTxt);
         page.add(ph);
 
-        // Selected items
+        // Selected Items Section — PER-ITEM BORROW DETAILS
         Div selectedSection = new Div();
         selectedSection.addClassName("borrow-card");
-        Span selLabel = new Span(selectedItems.size() + " item(s) selected");
+        Span selLabel = new Span();
         selLabel.getStyle().set("font-size", "12px").set("color", "#6b8a6b").set("display", "block").set("margin-bottom", "10px");
-        selectedSection.add(formSectionTitle("Selected Items"), selLabel);
+        selectedSection.add(formSectionTitle("Detail Peminjaman Barang"), selLabel);
 
         Div itemList = new Div();
-        itemList.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "8px");
+        itemList.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "16px");
         selectedSection.add(itemList);
+
+        List<Ruangan> allRuangan = barangService.getAllRuangan();
+        List<ItemFormHolder> holders = new ArrayList<>();
 
         Runnable[] refreshItems = new Runnable[1];
         refreshItems[0] = () -> {
             itemList.removeAll();
-            selLabel.setText(selectedItems.size() + " item(s) selected");
+            holders.clear();
+            selLabel.setText(selectedItems.size() + " item(s) dipilih — Atur tempat & tanggal untuk setiap barang");
+
             for (Barang item : new ArrayList<>(selectedItems)) {
-                Div row = new Div();
-                row.getStyle().set("display", "flex").set("align-items", "center")
-                        .set("gap", "10px").set("background", "#f0f4f0")
-                        .set("border-radius", "10px").set("padding", "8px 10px");
+                Div itemCard = new Div();
+                itemCard.getStyle()
+                        .set("background", "#ffffff")
+                        .set("border", "1px solid #d4e2d4")
+                        .set("border-radius", "12px")
+                        .set("padding", "14px 16px")
+                        .set("display", "flex")
+                        .set("flex-direction", "column")
+                        .set("gap", "12px")
+                        .set("box-shadow", "0 2px 6px rgba(0,0,0,0.03)");
+
+                // 1. Header: Thumb + Title + Remove button
+                Div headerRow = new Div();
+                headerRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px");
 
                 Div thumb = new Div();
-                thumb.getStyle().set("width", "44px").set("height", "44px")
+                thumb.getStyle().set("width", "48px").set("height", "48px")
                         .set("border-radius", "8px").set("overflow", "hidden")
                         .set("flex-shrink", "0").set("background", "#e0eae0");
                 if (item.getFotoBarang() != null && !item.getFotoBarang().isBlank()) {
@@ -662,99 +677,105 @@ public class UserDashboardView extends Div {
                 Div meta = new Div();
                 meta.getStyle().set("flex", "1");
                 Span iName = new Span(item.getNamaBarang());
-                iName.getStyle().set("font-size", "13px").set("font-weight", "600").set("color", "#1a2e1a").set("display", "block");
+                iName.getStyle().set("font-size", "14px").set("font-weight", "700").set("color", "#1a2e1a").set("display", "block");
                 String katN = item.getKategori() != null ? item.getKategori().getNamaKategori().toUpperCase() : "";
-                Span iKat = new Span(katN);
-                iKat.getStyle().set("font-size", "9px").set("color", "#6b8a6b").set("font-weight", "600");
+                String kodeN = item.getKodeBarang() != null ? " [" + item.getKodeBarang() + "]" : "";
+                Span iKat = new Span(katN + kodeN);
+                iKat.getStyle().set("font-size", "10px").set("color", "#6b8a6b").set("font-weight", "600");
                 meta.add(iName, iKat);
 
                 Div removeBtn = new Div();
                 removeBtn.getElement().setProperty("innerHTML",
                         "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='#e06a6a' stroke-width='2'>"
-                        + "<line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
+                                + "<line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
                 removeBtn.getStyle().set("cursor", "pointer").set("flex-shrink", "0");
                 removeBtn.addClickListener(ev -> {
                     selectedItems.remove(item);
                     refreshItems[0].run();
                 });
+                headerRow.add(thumb, meta, removeBtn);
 
-                row.add(thumb, meta, removeBtn);
-                itemList.add(row);
+                // 2. Ruangan Pemakaian
+                ComboBox<Ruangan> ruanganBox = new ComboBox<>("Ruang Pemakaian *");
+                ruanganBox.setItems(allRuangan);
+                ruanganBox.setItemLabelGenerator(Ruangan::getNamaRuangan);
+                ruanganBox.setWidthFull();
+                ruanganBox.setPlaceholder("Pilih ruangan pemakaian...");
+                if (item.getRuangan() != null) {
+                    ruanganBox.setValue(item.getRuangan());
+                } else if (!allRuangan.isEmpty()) {
+                    ruanganBox.setValue(allRuangan.get(0));
+                }
+
+                // 3. Tujuan Peminjaman
+                TextField tujuanField = new TextField("Tujuan Peminjaman *");
+                tujuanField.setPlaceholder("Keperluan peminjaman untuk " + item.getNamaBarang());
+                tujuanField.setWidthFull();
+
+                // 4. Date Row (Default: Today LocalDate.now())
+                DatePicker tglPinjamPicker = new DatePicker("Tanggal Pinjam *");
+                tglPinjamPicker.setMin(LocalDate.now());
+                tglPinjamPicker.setValue(LocalDate.now());
+                tglPinjamPicker.setWidthFull();
+
+                DatePicker tglKembaliPicker = new DatePicker("Tanggal Kembali *");
+                tglKembaliPicker.setMin(LocalDate.now());
+                tglKembaliPicker.setValue(LocalDate.now());
+                tglKembaliPicker.setWidthFull();
+
+                tglPinjamPicker.addValueChangeListener(ev -> {
+                    LocalDate start = ev.getValue();
+                    if (start != null) {
+                        if (start.isBefore(LocalDate.now())) {
+                            tglPinjamPicker.setValue(LocalDate.now());
+                            start = LocalDate.now();
+                        }
+                        tglKembaliPicker.setMin(start);
+                        if (tglKembaliPicker.getValue() != null && tglKembaliPicker.getValue().isBefore(start)) {
+                            tglKembaliPicker.setValue(start);
+                        }
+                    }
+                });
+
+                tglKembaliPicker.addValueChangeListener(ev -> {
+                    LocalDate end = ev.getValue();
+                    LocalDate start = tglPinjamPicker.getValue() != null ? tglPinjamPicker.getValue() : LocalDate.now();
+                    if (end != null && end.isBefore(start)) {
+                        tglKembaliPicker.setValue(start);
+                    }
+                });
+
+                Div datesGrid = new Div();
+                datesGrid.getStyle().set("display", "grid")
+                        .set("grid-template-columns", "1fr 1fr").set("gap", "10px");
+                datesGrid.add(tglPinjamPicker, tglKembaliPicker);
+
+                itemCard.add(headerRow, ruanganBox, tujuanField, datesGrid);
+                itemList.add(itemCard);
+
+                ItemFormHolder holder = new ItemFormHolder();
+                holder.barang = item;
+                holder.ruanganBox = ruanganBox;
+                holder.tujuanField = tujuanField;
+                holder.tglPinjamPicker = tglPinjamPicker;
+                holder.tglKembaliPicker = tglKembaliPicker;
+                holders.add(holder);
             }
+
             Div addMore = new Div();
             addMore.getElement().setProperty("innerHTML",
-                    "<span style='color:#4d8f4d;font-size:13px;font-weight:600;cursor:pointer'>+ Add more items</span>");
+                    "<span style='color:#4d8f4d;font-size:13px;font-weight:600;cursor:pointer'>+ Tambah Barang Lain</span>");
             addMore.addClickListener(ev -> switchTab("dashboard"));
             itemList.add(addMore);
         };
         refreshItems[0].run();
         page.add(selectedSection);
 
-        // Room
-        ComboBox<Ruangan> ruanganBox = new ComboBox<>("Ruang Pemakaian *");
-        ruanganBox.setItems(barangService.getAllRuangan());
-        ruanganBox.setItemLabelGenerator(Ruangan::getNamaRuangan);
-        ruanganBox.setWidthFull();
-        ruanganBox.setPlaceholder("Pilih ruangan");
-        Div ruanganCard = new Div();
-        ruanganCard.addClassName("borrow-card");
-        ruanganCard.add(ruanganBox);
-        page.add(ruanganCard);
-
-        // Purpose
-        TextField tujuan = new TextField("Tujuan Peminjaman *");
-        tujuan.setPlaceholder("Jelaskan tujuan peminjaman");
-        tujuan.setWidthFull();
-        Div tujuanCard = new Div();
-        tujuanCard.addClassName("borrow-card");
-        tujuanCard.add(tujuan);
-        page.add(tujuanCard);
-
-        // Dates with strict validation
-        DatePicker tglPinjam = new DatePicker("Tanggal Pinjam *");
-        tglPinjam.setMin(LocalDate.now());
-        tglPinjam.setValue(LocalDate.now());
-        tglPinjam.setWidthFull();
-
-        DatePicker tglKembali = new DatePicker("Tanggal Kembali *");
-        tglKembali.setMin(tglPinjam.getValue());
-        tglKembali.setValue(LocalDate.now().plusDays(7));
-        tglKembali.setWidthFull();
-
-        tglPinjam.addValueChangeListener(ev -> {
-            LocalDate start = ev.getValue();
-            if (start != null) {
-                if (start.isBefore(LocalDate.now())) {
-                    tglPinjam.setValue(LocalDate.now());
-                    start = LocalDate.now();
-                }
-                tglKembali.setMin(start);
-                if (tglKembali.getValue() != null && tglKembali.getValue().isBefore(start)) {
-                    tglKembali.setValue(start.plusDays(1));
-                }
-            }
-        });
-
-        tglKembali.addValueChangeListener(ev -> {
-            LocalDate end = ev.getValue();
-            LocalDate start = tglPinjam.getValue() != null ? tglPinjam.getValue() : LocalDate.now();
-            if (end != null && end.isBefore(start)) {
-                tglKembali.setValue(start.plusDays(1));
-            }
-        });
-
-        Div dateCard = new Div();
-        dateCard.addClassName("borrow-card");
-        dateCard.getStyle().set("display", "grid")
-                .set("grid-template-columns", "1fr 1fr").set("gap", "10px");
-        dateCard.add(tglPinjam, tglKembali);
-        page.add(dateCard);
-
         // Upload foto bukti — real file picker
         String[] borrowFotoName = {null};
         Div uploadCard = new Div();
         uploadCard.addClassName("borrow-card");
-        Span uploadLabel = new Span("Upload Foto Bukti *");
+        Span uploadLabel = new Span("Upload Foto Bukti Peminjam *");
         uploadLabel.getStyle().set("font-size", "13px").set("font-weight", "600")
                 .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "8px");
         MemoryBuffer borrowBuffer = new MemoryBuffer();
@@ -783,6 +804,7 @@ public class UserDashboardView extends Div {
                 .set("margin-bottom", "10px")
                 .set("align-items", "center")
                 .set("gap", "8px");
+        page.add(errBanner);
 
         // Submit button
         Button submitBtn = new Button("Ajukan Peminjaman");
@@ -796,8 +818,6 @@ public class UserDashboardView extends Div {
 
         submitBtn.addClickListener(e -> {
             errBanner.getStyle().set("display", "none");
-            ruanganBox.setInvalid(false);
-            tujuan.setInvalid(false);
 
             if (selectedItems.isEmpty()) {
                 errBanner.setText("⚠️ Belum ada barang yang dipilih! Silakan kembali ke Dashboard untuk memilih barang.");
@@ -805,26 +825,39 @@ public class UserDashboardView extends Div {
                 err("Pilih minimal 1 barang dari Dashboard!");
                 return;
             }
-            if (ruanganBox.getValue() == null) {
-                ruanganBox.setInvalid(true);
-                errBanner.setText("⚠️ Harap pilih Ruang Pemakaian terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
-                err("Pilih ruangan terlebih dahulu!");
-                return;
+
+            for (ItemFormHolder h : holders) {
+                h.ruanganBox.setInvalid(false);
+                h.tujuanField.setInvalid(false);
+
+                if (h.ruanganBox.getValue() == null) {
+                    h.ruanganBox.setInvalid(true);
+                    errBanner.setText("⚠️ Harap pilih Ruang Pemakaian untuk '" + h.barang.getNamaBarang() + "'!");
+                    errBanner.getStyle().set("display", "flex");
+                    err("Pilih ruangan pemakaian untuk " + h.barang.getNamaBarang() + "!");
+                    return;
+                }
+                if (h.tujuanField.getValue().isBlank()) {
+                    h.tujuanField.setInvalid(true);
+                    errBanner.setText("⚠️ Harap isi Tujuan Peminjaman untuk '" + h.barang.getNamaBarang() + "'!");
+                    errBanner.getStyle().set("display", "flex");
+                    err("Isi tujuan peminjaman untuk " + h.barang.getNamaBarang() + "!");
+                    return;
+                }
+                if (h.tglPinjamPicker.getValue() == null) {
+                    errBanner.setText("⚠️ Harap pilih Tanggal Pinjam untuk '" + h.barang.getNamaBarang() + "'!");
+                    errBanner.getStyle().set("display", "flex");
+                    err("Pilih tanggal pinjam!");
+                    return;
+                }
+                if (h.tglKembaliPicker.getValue() == null) {
+                    errBanner.setText("⚠️ Harap pilih Tanggal Kembali untuk '" + h.barang.getNamaBarang() + "'!");
+                    errBanner.getStyle().set("display", "flex");
+                    err("Pilih tanggal kembali!");
+                    return;
+                }
             }
-            if (tujuan.getValue().isBlank()) {
-                tujuan.setInvalid(true);
-                errBanner.setText("⚠️ Harap isi Tujuan Peminjaman terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
-                err("Isi tujuan peminjaman!");
-                return;
-            }
-            if (tglKembali.getValue() == null) {
-                errBanner.setText("⚠️ Harap pilih Tanggal Kembali!");
-                errBanner.getStyle().set("display", "flex");
-                err("Pilih tanggal kembali!");
-                return;
-            }
+
             if (borrowFotoName[0] == null) {
                 errBanner.setText("⚠️ Harap upload / ambil Foto Bukti terlebih dahulu!");
                 errBanner.getStyle().set("display", "flex");
@@ -843,14 +876,19 @@ public class UserDashboardView extends Div {
             }
 
             try {
-                pinjamanService.createPinjaman(
-                        currentUser,
-                        new ArrayList<>(selectedItems),
-                        ruanganBox.getValue(),
-                        tujuan.getValue().trim(),
-                        tglKembali.getValue(),
-                        savedFoto
-                );
+                List<PinjamanService.ItemBorrowRequest> requests = new ArrayList<>();
+                for (ItemFormHolder h : holders) {
+                    PinjamanService.ItemBorrowRequest req = new PinjamanService.ItemBorrowRequest(
+                            h.barang,
+                            h.ruanganBox.getValue(),
+                            h.tujuanField.getValue().trim(),
+                            h.tglPinjamPicker.getValue(),
+                            h.tglKembaliPicker.getValue()
+                    );
+                    requests.add(req);
+                }
+
+                pinjamanService.createPinjamanDetailed(currentUser, requests, savedFoto);
                 selectedItems.clear();
                 ok("Peminjaman berhasil diajukan! Barang berhasil dipinjam.");
                 switchTab("myitems");
@@ -888,6 +926,14 @@ public class UserDashboardView extends Div {
 
         page.add(submitWrap);
         contentArea.add(page);
+    }
+
+    private static class ItemFormHolder {
+        Barang barang;
+        ComboBox<Ruangan> ruanganBox;
+        TextField tujuanField;
+        DatePicker tglPinjamPicker;
+        DatePicker tglKembaliPicker;
     }
 
     // ════════════════════════════════════════════════════════════════════════
