@@ -12,3 +12,9 @@
 node_modules/
 src/main/frontend/generated/
 vite.generated.ts
+
+# Logs
+*.log
+hs_err_pid*
+replay_pid*
+

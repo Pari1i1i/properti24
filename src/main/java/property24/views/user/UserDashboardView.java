@@ -16,12 +16,16 @@ import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import property24.entity.*;
 import property24.service.BarangService;
+import property24.service.BookingService;
 import property24.service.PinjamanService;
 import property24.util.AuthSession;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import property24.service.UserService;
 
@@ -38,6 +42,7 @@ public class UserDashboardView extends Div {
     private final BarangService barangService;
     private final PinjamanService pinjamanService;
     private final UserService userService;
+    private final BookingService bookingService;
 
     private User currentUser;
     private String activeTab = "dashboard";
@@ -47,12 +52,14 @@ public class UserDashboardView extends Div {
     // Main containers
     private Div contentArea;
     private Div bottomNav;
-    private Div navDashboard, navBorrow, navMyItems, navReturn;
+    private Div navDashboard, navBorrow, navMyItems, navReturn, navBooking;
 
-    public UserDashboardView(BarangService barangService, PinjamanService pinjamanService, UserService userService) {
+    public UserDashboardView(BarangService barangService, PinjamanService pinjamanService,
+                             UserService userService, BookingService bookingService) {
         this.barangService = barangService;
         this.pinjamanService = pinjamanService;
         this.userService = userService;
+        this.bookingService = bookingService;
 
         if (!AuthSession.isLoggedIn()) {
             addAttachListener(e -> UI.getCurrent().navigate("login"));
@@ -107,13 +114,15 @@ public class UserDashboardView extends Div {
         navBorrow    = navTab(IC_PLUS_CIRCLE, "Pinjam", false);
         navMyItems   = navTab(IC_LIST, "My Items", false);
         navReturn    = navTab(IC_ROTATE, "Kembali", false);
+        navBooking   = navTab(IC_BOOKMARK, "Booking", false);
 
         navDashboard.addClickListener(e -> switchTab("dashboard"));
         navBorrow.addClickListener(e -> switchTab("borrow"));
         navMyItems.addClickListener(e -> switchTab("myitems"));
         navReturn.addClickListener(e -> switchTab("return"));
+        navBooking.addClickListener(e -> switchTab("mybooking"));
 
-        nav.add(navDashboard, navBorrow, navMyItems, navReturn);
+        nav.add(navDashboard, navBorrow, navMyItems, navReturn, navBooking);
         return nav;
     }
 
@@ -126,6 +135,7 @@ public class UserDashboardView extends Div {
             case "borrow"    -> showBorrowForm();
             case "myitems"   -> showMyItems();
             case "return"    -> showReturnList();
+            case "mybooking" -> showMyBookings();
         }
     }
 
@@ -134,6 +144,7 @@ public class UserDashboardView extends Div {
         setNavActive(navBorrow,    IC_PLUS_CIRCLE, "borrow".equals(activeTab));
         setNavActive(navMyItems,   IC_LIST,        "myitems".equals(activeTab));
         setNavActive(navReturn,    IC_ROTATE,      "return".equals(activeTab));
+        setNavActive(navBooking,   IC_BOOKMARK,    "mybooking".equals(activeTab));
     }
 
     private void setNavActive(Div tab, String iconSvgPath, boolean active) {
@@ -402,11 +413,12 @@ public class UserDashboardView extends Div {
             imgWrap.add(ic);
         }
 
-        boolean avail = b.getStatus() == Barang.Status.tersedia;
+        boolean isBooked = bookingService.isBarangBooked(b);
+        boolean avail = b.getStatus() == Barang.Status.tersedia && !isBooked;
         boolean borrowed = b.getStatus() == Barang.Status.dipinjam;
-        String badgeTxt = avail ? "AVAILABLE" : borrowed ? "BORROWED" : "RUSAK";
-        String badgeClr = avail ? "#2ed573" : borrowed ? "#ff9f43" : "#ff5252";
-        String badgeBg  = avail ? "rgba(46,213,115,0.2)" : borrowed ? "rgba(255,159,67,0.2)" : "rgba(255,82,82,0.2)";
+        String badgeTxt = avail ? "AVAILABLE" : isBooked ? "DIBOOKING" : borrowed ? "BORROWED" : "RUSAK";
+        String badgeClr = avail ? "#2ed573" : isBooked ? "#ff9f43" : borrowed ? "#ff9f43" : "#ff5252";
+        String badgeBg  = avail ? "rgba(46,213,115,0.2)" : isBooked ? "rgba(255,159,67,0.2)" : borrowed ? "rgba(255,159,67,0.2)" : "rgba(255,82,82,0.2)";
 
         Div badge = new Div();
         badge.setText(badgeTxt);
@@ -534,25 +546,46 @@ public class UserDashboardView extends Div {
                 .set("color", "#b8c9bf").set("border", "1px solid rgba(255,255,255,0.15)")
                 .set("border-radius", "10px").set("height", "42px").set("cursor", "pointer");
 
-        boolean canBorrow = b.getStatus() == Barang.Status.tersedia;
-        Button borrowBtn = new Button(canBorrow ? "Pinjam Barang Ini" : "Tidak Tersedia");
-        borrowBtn.setEnabled(canBorrow);
-        borrowBtn.getStyle()
-                .set("flex", "2").set("border", "none").set("border-radius", "10px")
-                .set("height", "42px").set("cursor", canBorrow ? "pointer" : "default")
-                .set("font-weight", "700").set("font-size", "13px")
-                .set("background", canBorrow ? "linear-gradient(135deg,#4d8f4d,#2d6a2d)" : "#555")
-                .set("color", "white");
+        boolean isBooked = bookingService.isBarangBooked(b);
+        boolean canBorrow = b.getStatus() == Barang.Status.tersedia && !isBooked;
 
         if (canBorrow) {
-            borrowBtn.addClickListener(ev -> {
+            Button bookingBtn = new Button("Booking", ev -> {
+                d.close();
+                showBookingModal(b);
+            });
+            bookingBtn.getStyle()
+                    .set("flex", "1").set("border", "none").set("border-radius", "10px")
+                    .set("height", "42px").set("cursor", "pointer")
+                    .set("font-weight", "700").set("font-size", "12px")
+                    .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
+                    .set("color", "white");
+
+            Button borrowBtn = new Button("Pinjam", ev -> {
                 d.close();
                 if (!selectedItems.contains(b)) selectedItems.add(b);
                 switchTab("borrow");
             });
-        }
+            borrowBtn.getStyle()
+                    .set("flex", "1").set("border", "none").set("border-radius", "10px")
+                    .set("height", "42px").set("cursor", "pointer")
+                    .set("font-weight", "700").set("font-size", "12px")
+                    .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
+                    .set("color", "white");
 
-        footer.add(closeBtn, borrowBtn);
+            footer.add(closeBtn, bookingBtn, borrowBtn);
+        } else {
+            String textBtn = isBooked ? "Sedang Dibooking" : "Tidak Tersedia";
+            Button disabledBtn = new Button(textBtn);
+            disabledBtn.setEnabled(false);
+            disabledBtn.getStyle()
+                    .set("flex", "2").set("border", "none").set("border-radius", "10px")
+                    .set("height", "42px").set("cursor", "default")
+                    .set("font-weight", "700").set("font-size", "13px")
+                    .set("background", "#555").set("color", "white");
+
+            footer.add(closeBtn, disabledBtn);
+        }
         layout.add(footer);
         d.add(layout);
         d.open();
@@ -1509,12 +1542,485 @@ public class UserDashboardView extends Div {
 
     private void styleDarkField(com.vaadin.flow.component.Component field) {
         field.getElement().getStyle()
-                .set("--lumo-body-text-color", "white")
-                .set("--vaadin-input-field-value-color", "white")
-                .set("--vaadin-input-field-background", "rgba(255,255,255,0.08)")
-                .set("--vaadin-input-field-border-color", "rgba(143,176,138,0.3)");
+                .set("--lumo-primary-text-color", "#ffffff")
+                .set("--lumo-secondary-text-color", "#e2f0e2")
+                .set("--lumo-body-text-color", "#ffffff")
+                .set("--lumo-contrast-90pct", "#ffffff")
+                .set("--lumo-contrast-80pct", "#ffffff")
+                .set("--lumo-contrast-70pct", "#e2f0e2")
+                .set("--lumo-contrast-60pct", "#c2e0c2")
+                .set("--lumo-contrast-50pct", "#a2d0a2")
+                .set("--vaadin-input-field-label-color", "#e2f0e2")
+                .set("--vaadin-input-field-label-font-weight", "700")
+                .set("--vaadin-input-field-value-color", "#ffffff")
+                .set("--vaadin-input-field-placeholder-color", "rgba(255,255,255,0.65)")
+                .set("--vaadin-input-field-background", "rgba(255,255,255,0.12)")
+                .set("--vaadin-input-field-border-color", "rgba(143,176,138,0.5)");
     }
 
+    private void showBookingModal(Barang b) {
+        Dialog d = new Dialog();
+        d.setModal(true);
+        d.setWidth("92vw");
+        d.setMaxWidth("440px");
+        d.getElement().getStyle()
+                .set("--lumo-base-color", "#0f1e14")
+                .set("--lumo-body-text-color", "#ffffff")
+                .set("--lumo-secondary-text-color", "#e2f0e2")
+                .set("--lumo-contrast-70pct", "#e2f0e2")
+                .set("--vaadin-input-field-label-color", "#e2f0e2");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.getStyle()
+                .set("background", "#0f1e14").set("border-radius", "20px")
+                .set("padding", "0").set("gap", "0");
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        // ── Header bar ──────────────────────────────────────────────────────
+        Div headerBar = new Div();
+        headerBar.getStyle()
+                .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
+                .set("padding", "18px 22px 16px")
+                .set("border-radius", "20px 20px 0 0");
+
+        Span headerTitle = new Span("📋  Ajukan Booking Barang");
+        headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
+
+        Span headerSub = new Span("Permintaan Anda akan dikonfirmasi oleh admin sebelum berlaku.");
+        headerSub.getStyle().set("color", "rgba(255,255,255,0.85)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
+        headerBar.add(headerTitle, headerSub);
+
+        // ── Barang info banner ───────────────────────────────────────────────
+        Div infoBanner = new Div();
+        infoBanner.getStyle()
+                .set("background", "rgba(255,255,255,0.08)")
+                .set("border-bottom", "1px solid rgba(255,255,255,0.1)")
+                .set("padding", "14px 22px")
+                .set("display", "flex").set("align-items", "center").set("gap", "14px");
+
+        Div iconBox = new Div();
+        iconBox.getStyle()
+                .set("width", "44px").set("height", "44px").set("background", "rgba(106,171,106,0.25)")
+                .set("border-radius", "10px").set("border", "1px solid rgba(106,171,106,0.5)")
+                .set("display", "flex").set("align-items", "center").set("justify-content", "center")
+                .set("flex-shrink", "0");
+        iconBox.getElement().setProperty("innerHTML",
+                "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#88e088' stroke-width='2.5'>" +
+                "<path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/></svg>");
+
+        Div barangInfo = new Div();
+        Span namaBarang = new Span(b.getNamaBarang());
+        namaBarang.getStyle().set("color", "white").set("font-size", "15px").set("font-weight", "800").set("display", "block");
+
+        String katText = (b.getKategori() != null ? b.getKategori().getNamaKategori() : "—") +
+                (b.getRuangan() != null ? "  ·  " + b.getRuangan().getNamaRuangan() : "");
+        Span katSpan = new Span(katText);
+        katSpan.getStyle().set("color", "#9ae09a").set("font-size", "12px").set("font-weight", "700");
+        barangInfo.add(namaBarang, katSpan);
+
+        infoBanner.add(iconBox, barangInfo);
+
+        // ── Form body ────────────────────────────────────────────────────────
+        Div formBody = new Div();
+        formBody.getStyle().set("padding", "20px 22px");
+
+        ComboBox<Ruangan> ruanganBox = new ComboBox<>("Ruang Pemakaian *");
+        ruanganBox.setItems(barangService.getAllRuangan());
+        ruanganBox.setItemLabelGenerator(Ruangan::getNamaRuangan);
+        ruanganBox.setWidthFull();
+        if (b.getRuangan() != null) {
+            ruanganBox.setValue(b.getRuangan());
+        }
+        styleDarkField(ruanganBox);
+
+        // Date row
+        Div dateRow = new Div();
+        dateRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "12px").set("margin-bottom", "14px");
+
+        DatePicker tglAmbilPicker = new DatePicker("Tanggal Rencana Ambil");
+        tglAmbilPicker.setMin(LocalDate.now());
+        tglAmbilPicker.setValue(LocalDate.now());
+        tglAmbilPicker.setWidth("60%");
+        styleDarkField(tglAmbilPicker);
+
+        TimePicker jamAmbilPicker = new TimePicker("Jam Ambil");
+        jamAmbilPicker.setValue(LocalTime.of(8, 0));
+        jamAmbilPicker.setStep(java.time.Duration.ofMinutes(30));
+        jamAmbilPicker.setWidth("40%");
+        styleDarkField(jamAmbilPicker);
+
+        dateRow.add(tglAmbilPicker, jamAmbilPicker);
+
+        TextArea catatanArea = new TextArea("Catatan / Keperluan");
+        catatanArea.setPlaceholder("Tuliskan keperluan atau alasan peminjaman...");
+        catatanArea.setMinHeight("80px");
+        catatanArea.setWidthFull();
+        styleDarkField(catatanArea);
+
+        // Info note
+        Div noteBox = new Div();
+        noteBox.getStyle()
+                .set("background", "rgba(224,122,42,0.15)").set("border", "1px solid rgba(224,122,42,0.4)")
+                .set("border-radius", "10px").set("padding", "10px 14px").set("margin-top", "14px")
+                .set("display", "flex").set("gap", "8px").set("align-items", "flex-start");
+        Span noteIcon = new Span("ℹ️");
+        noteIcon.getStyle().set("flex-shrink", "0").set("font-size", "14px");
+        Span noteText = new Span("Booking Anda akan masuk ke daftar antrian dan perlu disetujui oleh admin terlebih dahulu. " +
+                "Barang akan dikunci sementara untuk mencegah peminjaman oleh pengguna lain.");
+        noteText.getStyle().set("color", "#ffc288").set("font-size", "12px").set("line-height", "1.6").set("font-weight", "500");
+        noteBox.add(noteIcon, noteText);
+
+        formBody.add(ruanganBox, dateRow, catatanArea, noteBox);
+
+        // Footer
+        Div footer = new Div();
+        footer.getStyle()
+                .set("display", "flex").set("gap", "10px").set("padding", "0 22px 20px")
+                .set("border-top", "1px solid rgba(255,255,255,0.07)").set("padding-top", "16px");
+
+        Button cancelBtn = new Button("Batal", ev -> d.close());
+        cancelBtn.getStyle()
+                .set("flex", "1").set("background", "rgba(255,255,255,0.06)")
+                .set("color", "#8ab08a").set("border", "1px solid rgba(255,255,255,0.12)")
+                .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
+                .set("font-weight", "600");
+
+        Button submitBtn = new Button("🔖  Ajukan Booking", ev -> {
+            try {
+                if (ruanganBox.getValue() == null) {
+                    err("Pilih ruang pemakaian terlebih dahulu!");
+                    return;
+                }
+                LocalDate dateVal = tglAmbilPicker.getValue();
+                LocalTime timeVal = jamAmbilPicker.getValue() != null ? jamAmbilPicker.getValue() : LocalTime.of(8, 0);
+                if (dateVal == null) {
+                    err("Pilih tanggal rencana ambil!");
+                    return;
+                }
+                if (catatanArea.getValue() == null || catatanArea.getValue().isBlank()) {
+                    err("Tuliskan keperluan / catatan booking!");
+                    return;
+                }
+                LocalDateTime tglJamAmbil = LocalDateTime.of(dateVal, timeVal);
+                bookingService.createBooking(currentUser, b, ruanganBox.getValue(), tglJamAmbil, catatanArea.getValue());
+                ok("✅  Booking berhasil diajukan! Menunggu konfirmasi admin.");
+                d.close();
+                switchTab("mybooking");
+            } catch (Exception ex) {
+                err(ex.getMessage());
+            }
+        });
+        submitBtn.getStyle()
+                .set("flex", "2").set("border", "none").set("border-radius", "10px")
+                .set("height", "44px").set("cursor", "pointer").set("font-weight", "800")
+                .set("font-size", "13px")
+                .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)").set("color", "white");
+
+        footer.add(cancelBtn, submitBtn);
+        layout.add(headerBar, infoBanner, formBody, footer);
+        d.add(layout);
+        d.open();
+    }
+
+    private void showMyBookings() {
+        contentArea.add(buildTopBar("PROPERTY"));
+
+        Div page = new Div();
+        page.addClassName("borrow-page");
+
+        Span heading = new Span("Booking Saya");
+        heading.addClassName("borrow-title");
+        page.add(heading);
+
+        List<Booking> list = bookingService.getBookingsByUser(currentUser);
+
+        if (list.isEmpty()) {
+            Div emptyBox = new Div();
+            emptyBox.getStyle()
+                    .set("background", "white").set("border-radius", "16px")
+                    .set("padding", "40px 20px").set("text-align", "center")
+                    .set("box-shadow", "0 2px 8px rgba(0,0,0,0.06)");
+            Span emptyTxt = new Span("Belum ada riwayat booking.");
+            emptyTxt.getStyle().set("color", "#666").set("font-size", "14px").set("font-weight", "600");
+            emptyBox.add(emptyTxt);
+            page.add(emptyBox);
+        } else {
+            DateTimeFormatter dtFmt = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+
+            for (Booking bk : list) {
+                Div card = new Div();
+                card.getStyle()
+                        .set("background", "#16281b").set("border-radius", "16px")
+                        .set("padding", "18px 20px").set("margin-bottom", "14px")
+                        .set("border", "1px solid rgba(143,176,138,0.2)");
+
+                Div topRow = new Div();
+                topRow.getStyle().set("display", "flex").set("justify-content", "space-between")
+                        .set("align-items", "center").set("margin-bottom", "10px");
+
+                String namaB = bk.getBarang() != null ? bk.getBarang().getNamaBarang() : "Barang # " + bk.getId();
+                Span itemName = new Span(namaB);
+                itemName.getStyle().set("color", "white").set("font-size", "15px").set("font-weight", "800");
+
+                String stText = bk.getStatus() != null ? bk.getStatus().name().toUpperCase().replace("_", " ") : "—";
+                String stColor = switch (bk.getStatus()) {
+                    case menunggu_persetujuan -> "#f0a868";
+                    case disetujui -> "#4caf50";
+                    case diambil -> "#2196f3";
+                    case ditolak -> "#ff5252";
+                    case dibatalkan -> "#888888";
+                    case kedaluwarsa -> "#ff5252";
+                };
+                Span stBadge = new Span(stText);
+                stBadge.getStyle()
+                        .set("background", stColor + "22").set("color", stColor)
+                        .set("font-size", "10px").set("font-weight", "700")
+                        .set("padding", "3px 8px").set("border-radius", "12px")
+                        .set("border", "1px solid " + stColor);
+
+                topRow.add(itemName, stBadge);
+                card.add(topRow);
+
+                String tglB = bk.getTglBooking() != null ? bk.getTglBooking().format(dtFmt) : "—";
+                String tglR = bk.getTglRencanaAmbil() != null ? bk.getTglRencanaAmbil().format(dtFmt) : "—";
+                String tglExp = bk.getBatasWaktu() != null ? bk.getBatasWaktu().format(dtFmt) : "—";
+                String ru = bk.getRuangan() != null ? bk.getRuangan().getNamaRuangan() :
+                        (bk.getBarang() != null && bk.getBarang().getRuangan() != null ? bk.getBarang().getRuangan().getNamaRuangan() : "—");
+
+                card.add(infoRow("Ruang Pemakaian", ru));
+                card.add(infoRow("Waktu Booking", tglB));
+                card.add(infoRow("Rencana Ambil", tglR));
+                card.add(infoRow("Batas Waktu (Expiry)", tglExp));
+                if (bk.getCatatan() != null && !bk.getCatatan().isBlank()) {
+                    card.add(infoRow("Catatan", bk.getCatatan()));
+                }
+
+                if (bk.getStatus() == Booking.BookingStatus.menunggu_persetujuan || bk.getStatus() == Booking.BookingStatus.disetujui) {
+                    Div actionRow = new Div();
+                    actionRow.getStyle().set("margin-top", "12px").set("display", "flex").set("gap", "10px").set("justify-content", "flex-end");
+
+                    Button cancelBtn = new Button("Batalkan Booking", ev -> {
+                        Dialog confirmDialog = new Dialog();
+                        confirmDialog.setModal(true);
+                        confirmDialog.setWidth("350px");
+                        confirmDialog.getElement().getStyle().set("--lumo-base-color", "#0f1e14").set("--lumo-body-text-color", "white");
+                        
+                        VerticalLayout dLayout = new VerticalLayout();
+                        dLayout.getStyle().set("background", "#0f1e14").set("border-radius", "16px").set("padding", "20px");
+                        
+                        Span confirmTitle = new Span("Batalkan Booking?");
+                        confirmTitle.getStyle().set("color", "white").set("font-size", "16px").set("font-weight", "bold");
+                        
+                        Span msg = new Span("Apakah Anda yakin ingin membatalkan booking ini?");
+                        msg.getStyle().set("color", "#b8c9bf").set("font-size", "13px");
+                        
+                        Div footer = new Div();
+                        footer.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px").set("width", "100%");
+                        
+                        Button noBtn = new Button("Tidak", e -> confirmDialog.close());
+                        noBtn.getStyle().set("flex", "1").set("background", "rgba(255,255,255,0.06)").set("color", "white").set("border-radius", "8px");
+                        
+                        Button yesBtn = new Button("Ya, Batalkan", e -> {
+                            try {
+                                bookingService.cancelBooking(bk, currentUser);
+                                ok("Booking berhasil dibatalkan.");
+                                confirmDialog.close();
+                                switchTab("mybooking");
+                            } catch (Exception ex) {
+                                err(ex.getMessage());
+                            }
+                        });
+                        yesBtn.getStyle().set("flex", "1").set("background", "linear-gradient(135deg,#e02a2a,#b31717)").set("color", "white").set("border", "none").set("border-radius", "8px");
+                        
+                        footer.add(noBtn, yesBtn);
+                        dLayout.add(confirmTitle, msg, footer);
+                        confirmDialog.add(dLayout);
+                        confirmDialog.open();
+                    });
+                    cancelBtn.getStyle()
+                            .set("background", "rgba(255,82,82,0.1)").set("color", "#ff5252")
+                            .set("border", "1px solid rgba(255,82,82,0.3)").set("border-radius", "8px")
+                            .set("padding", "6px 16px").set("font-size", "12px").set("font-weight", "700").set("cursor", "pointer");
+
+                    if (bk.getStatus() == Booking.BookingStatus.disetujui) {
+                        Button pinjamBtn = new Button("Pinjam", ev -> showFinalizeBookingDialog(bk));
+                        pinjamBtn.getStyle()
+                                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
+                                .set("color", "white").set("border", "none").set("border-radius", "8px")
+                                .set("padding", "6px 16px").set("font-weight", "700").set("font-size", "12px")
+                                .set("cursor", "pointer");
+
+                        actionRow.add(cancelBtn, pinjamBtn);
+                    } else {
+                        actionRow.add(cancelBtn);
+                    }
+
+                    card.add(actionRow);
+                }
+
+                page.add(card);
+            }
+        }
+
+        contentArea.add(page);
+    }
+
+    private void showFinalizeBookingDialog(Booking bk) {
+        Dialog d = new Dialog();
+        d.setModal(true);
+        d.setWidth("92vw");
+        d.setMaxWidth("440px");
+        d.getElement().getStyle()
+                .set("--lumo-base-color", "#0f1e14")
+                .set("--lumo-body-text-color", "#ffffff")
+                .set("--lumo-secondary-text-color", "#e2f0e2")
+                .set("--lumo-contrast-70pct", "#e2f0e2")
+                .set("--vaadin-input-field-label-color", "#e2f0e2");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.getStyle()
+                .set("background", "#0f1e14").set("border-radius", "20px")
+                .set("padding", "0").set("gap", "0");
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        // Header bar
+        Div headerBar = new Div();
+        headerBar.getStyle()
+                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
+                .set("padding", "18px 22px 16px")
+                .set("border-radius", "20px 20px 0 0");
+
+        Span headerTitle = new Span("📦 Konfirmasi Peminjaman Barang");
+        headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
+
+        Span headerSub = new Span("Booking Anda telah disetujui admin. Lengkapi data untuk mengambil barang.");
+        headerSub.getStyle().set("color", "rgba(255,255,255,0.85)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
+        headerBar.add(headerTitle, headerSub);
+
+        // Read-only info section
+        Div formBody = new Div();
+        formBody.getStyle().set("padding", "20px 22px");
+
+        Div infoBox = new Div();
+        infoBox.getStyle()
+                .set("background", "rgba(255,255,255,0.06)")
+                .set("border", "1px solid rgba(255,255,255,0.1)")
+                .set("border-radius", "12px")
+                .set("padding", "14px 16px")
+                .set("margin-bottom", "16px");
+
+        String namaBarangVal = bk.getBarang() != null ? bk.getBarang().getNamaBarang() : "—";
+        String ruanganVal = bk.getRuangan() != null ? bk.getRuangan().getNamaRuangan() :
+                (bk.getBarang() != null && bk.getBarang().getRuangan() != null ? bk.getBarang().getRuangan().getNamaRuangan() : "—");
+        String catatanVal = (bk.getCatatan() != null && !bk.getCatatan().isBlank()) ? bk.getCatatan() : "Keperluan Peminjaman";
+
+        infoBox.add(infoRow("Barang", namaBarangVal));
+        infoBox.add(infoRow("Ruang Pemakaian", ruanganVal));
+        infoBox.add(infoRow("Tujuan / Catatan", catatanVal));
+
+        // Inputs to fill
+        DatePicker tglKembaliPicker = new DatePicker("Tanggal Rencana Kembali *");
+        tglKembaliPicker.setMin(LocalDate.now());
+        tglKembaliPicker.setValue(LocalDate.now().plusDays(7));
+        tglKembaliPicker.setWidthFull();
+        styleDarkField(tglKembaliPicker);
+
+        // Upload foto bukti
+        String[] fotoNameArr = {null};
+        Div uploadWrapper = new Div();
+        uploadWrapper.getStyle().set("margin-top", "14px");
+        Span uploadLabel = new Span("Upload Foto Bukti *");
+        uploadLabel.getStyle().set("font-size", "13px").set("font-weight", "700")
+                .set("color", "#e2f0e2").set("display", "block").set("margin-bottom", "6px");
+
+        MemoryBuffer buffer = new MemoryBuffer();
+        Upload upload = new Upload(buffer);
+        upload.setAcceptedFileTypes("image/*");
+        upload.setMaxFiles(1);
+        upload.setMaxFileSize(10 * 1024 * 1024);
+        upload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Bukti"));
+        upload.setDropLabel(new Span("JPG, PNG, or HEIC · Max 10MB"));
+        upload.setWidthFull();
+        upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
+        styleDarkField(upload);
+
+        uploadWrapper.add(uploadLabel, upload);
+
+        formBody.add(infoBox, tglKembaliPicker, uploadWrapper);
+
+        // Footer
+        Div footer = new Div();
+        footer.getStyle()
+                .set("display", "flex").set("gap", "10px").set("padding", "0 22px 20px")
+                .set("border-top", "1px solid rgba(255,255,255,0.07)").set("padding-top", "16px");
+
+        Button cancelBtn = new Button("Batal", ev -> d.close());
+        cancelBtn.getStyle()
+                .set("flex", "1").set("background", "rgba(255,255,255,0.06)")
+                .set("color", "#8ab08a").set("border", "1px solid rgba(255,255,255,0.12)")
+                .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
+                .set("font-weight", "600");
+
+        Button submitBtn = new Button("📦  Pinjam Sekarang", ev -> {
+            if (tglKembaliPicker.getValue() == null) {
+                err("Pilih tanggal rencana kembali!");
+                return;
+            }
+            if (fotoNameArr[0] == null) {
+                err("Upload foto bukti terlebih dahulu!");
+                return;
+            }
+
+            String savedFoto = null;
+            try {
+                savedFoto = property24.util.FileUploadHelper.saveImage(buffer, fotoNameArr[0]);
+            } catch (Exception ex) {
+                err("Gagal menyimpan foto bukti: " + ex.getMessage());
+                return;
+            }
+
+            try {
+                Ruangan targetRuangan = bk.getRuangan() != null ? bk.getRuangan() :
+                        (bk.getBarang() != null ? bk.getBarang().getRuangan() : null);
+
+                bookingService.convertToPinjaman(
+                        bk,
+                        targetRuangan,
+                        catatanVal,
+                        tglKembaliPicker.getValue(),
+                        savedFoto
+                );
+                ok("Peminjaman berhasil dikonfirmasi!");
+                d.close();
+                switchTab("myitems");
+            } catch (Exception ex) {
+                err(ex.getMessage());
+            }
+        });
+        submitBtn.getStyle()
+                .set("flex", "2").set("border", "none").set("border-radius", "10px")
+                .set("height", "44px").set("cursor", "pointer").set("font-weight", "800")
+                .set("font-size", "13px")
+                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)").set("color", "white");
+
+        footer.add(cancelBtn, submitBtn);
+        layout.add(headerBar, formBody, footer);
+        d.add(layout);
+        d.open();
+    }
+
+    private Div infoRow(String label, String val) {
+        Div row = new Div();
+        row.getStyle().set("display", "flex").set("justify-content", "space-between").set("align-items", "center").set("font-size", "13px").set("margin-bottom", "6px");
+        Span l = new Span(label);
+        l.getStyle().set("color", "#a8cda8").set("font-weight", "500");
+        Span v = new Span(val != null && !val.isBlank() ? val : "—");
+        v.getStyle().set("color", "#ffffff").set("font-weight", "700").set("text-align", "right");
+        row.add(l, v);
+        return row;
+    }
 
     private String logoSvg(int size) {
         return String.format(
@@ -1527,7 +2033,7 @@ public class UserDashboardView extends Div {
             "</svg>", size, size);
     }
 
-    // ── SVG Icon paths ─────────────────────────────────────────────────────
+
     private static final String IC_HOME =
         "<path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/><polyline points='9 22 9 12 15 12 15 22'/>";
     private static final String IC_PLUS_CIRCLE =
@@ -1543,4 +2049,6 @@ public class UserDashboardView extends Div {
         "<path d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/>";
     private static final String IC_CAMERA =
         "<path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/><circle cx='12' cy='13' r='4'/>";
+    private static final String IC_BOOKMARK =
+        "<path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'/>";
 }
