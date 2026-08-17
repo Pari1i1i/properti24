@@ -1058,16 +1058,29 @@ public class UserDashboardView extends Div {
         locRow.add(locIco, locSpan);
         meta.add(locRow);
 
-        // Return button (only for active borrowed items)
+        // Return & Lapor Rusak buttons (only for active borrowed items)
         if (!isReturned && !isPendingReturn) {
-            Button returnBtn = new Button("Return This Item");
+            Div btnRow = new Div();
+            btnRow.getStyle().set("display", "flex").set("gap", "8px").set("margin-top", "10px");
+
+            Button returnBtn = new Button("Kembalikan");
             returnBtn.getStyle()
-                    .set("width", "100%").set("height", "36px").set("margin-top", "10px")
+                    .set("flex", "1").set("height", "36px")
                     .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
                     .set("color", "white").set("border", "none").set("border-radius", "8px")
                     .set("font-weight", "700").set("font-size", "12px").set("cursor", "pointer");
             returnBtn.addClickListener(ev -> showReturnForm(d));
-            meta.add(returnBtn);
+
+            Button laporRusakBtn = new Button("⚠️ Lapor Rusak");
+            laporRusakBtn.getStyle()
+                    .set("flex", "1").set("height", "36px")
+                    .set("background", "white").set("color", "#c62828")
+                    .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
+                    .set("font-weight", "700").set("font-size", "12px").set("cursor", "pointer");
+            laporRusakBtn.addClickListener(ev -> showLaporRusakUserForm(d));
+
+            btnRow.add(returnBtn, laporRusakBtn);
+            meta.add(btnRow);
         } else if (isReturned) {
             Div verifiedRow = new Div();
             verifiedRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "4px").set("margin-top", "8px");
@@ -1297,6 +1310,143 @@ public class UserDashboardView extends Div {
             infoBox.add(infoTitle, infoTxt);
             page.add(infoBox);
         }
+
+        contentArea.add(page);
+    }
+
+    private void showLaporRusakUserForm(PinjamanDetail detail) {
+        contentArea.removeAll();
+        activeTab = "return";
+        updateNavActive();
+        contentArea.add(buildTopBar("PROPERTY"));
+
+        Div page = new Div();
+        page.getStyle()
+                .set("flex", "1")
+                .set("background", "#f5f7f5")
+                .set("overflow-y", "auto")
+                .set("padding", "16px");
+
+        // Back + header
+        Div ph = new Div();
+        ph.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px").set("margin-bottom", "16px");
+        Div backBtn = new Div();
+        backBtn.getElement().setProperty("innerHTML",
+                "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='#1a2e1a' stroke-width='2'>"
+                + "<polyline points='15 18 9 12 15 6'/></svg>");
+        backBtn.getStyle().set("cursor", "pointer");
+        backBtn.addClickListener(e -> switchTab("myitems"));
+        Span phTitle = new Span("⚠️ Laporkan Kerusakan Barang");
+        phTitle.getStyle().set("font-size", "18px").set("font-weight", "800").set("color", "#c62828");
+        Span phSub = new Span("Barang yang Anda pinjam mengalami kerusakan? Laporkan dan ajukan pengembalian.");
+        phSub.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block");
+        Div phTxt = new Div();
+        phTxt.add(phTitle, phSub);
+        ph.add(backBtn, phTxt);
+        page.add(ph);
+
+        // Item info card
+        Barang b = detail.getBarang();
+        Div itemCard = new Div();
+        itemCard.addClassName("borrow-card");
+        itemCard.getStyle().set("display", "flex").set("gap", "12px").set("align-items", "center");
+
+        Div thumb = new Div();
+        thumb.getStyle()
+                .set("width", "64px").set("height", "64px").set("flex-shrink", "0")
+                .set("border-radius", "10px").set("overflow", "hidden")
+                .set("background", "#e8f0ea");
+        if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
+            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+            thumb.add(img);
+        }
+
+        Div meta = new Div();
+        meta.getStyle().set("flex", "1");
+        Span bName = new Span(b != null ? b.getNamaBarang() : "—");
+        bName.getStyle().set("font-size", "14px").set("font-weight", "700").set("color", "#1a2e1a").set("display", "block");
+        Div avBadge = new Div();
+        avBadge.setText("MEMBUTUHKAN VERIFIKASI ADMIN");
+        avBadge.getStyle()
+                .set("display", "inline-block").set("background", "#fff3e0")
+                .set("color", "#e65100").set("border", "1px solid #ffe0b2")
+                .set("font-size", "9px").set("font-weight", "700")
+                .set("padding", "2px 8px").set("border-radius", "20px");
+        String ruanganStr = detail.getRuangan() != null ? detail.getRuangan().getNamaRuangan() : "—";
+        Span locSpan = new Span("📍 " + ruanganStr);
+        locSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block").set("margin-top", "3px");
+        meta.add(bName, avBadge, locSpan);
+        itemCard.add(thumb, meta);
+        page.add(itemCard);
+
+        // Upload foto bukti kerusakan
+        String[] fotoNameArr = {null};
+        Div uploadCard = new Div();
+        uploadCard.addClassName("borrow-card");
+        Span ulLabel = new Span("Upload Foto Bukti Kerusakan *");
+        ulLabel.getStyle().set("font-size", "13px").set("font-weight", "700")
+                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "8px");
+        MemoryBuffer buffer = new MemoryBuffer();
+        Upload upload = new Upload(buffer);
+        upload.setAcceptedFileTypes("image/*");
+        upload.setMaxFiles(1);
+        upload.setMaxFileSize(10 * 1024 * 1024);
+        upload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Kerusakan"));
+        upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
+        upload.setWidthFull();
+        upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
+        uploadCard.add(ulLabel, upload);
+        page.add(uploadCard);
+
+        // Deskripsi kerusakan (wajib)
+        Div catatanCard = new Div();
+        catatanCard.addClassName("borrow-card");
+        TextArea catatanField = new TextArea("Deskripsi Kerusakan *");
+        catatanField.setPlaceholder("Jelaskan kerusakan yang terjadi (misal: layar pecah, mati total, tombol lepas)...");
+        catatanField.setWidthFull();
+        catatanField.setMinHeight("90px");
+        catatanCard.add(catatanField);
+        page.add(catatanCard);
+
+        // Submit button
+        Button kirimBtn = new Button("⚠️ Kirim Laporan Kerusakan & Return");
+        kirimBtn.setWidthFull();
+        kirimBtn.getStyle()
+                .set("height", "50px").set("border-radius", "12px")
+                .set("background", "linear-gradient(135deg,#e02a2a,#b31717)")
+                .set("color", "white").set("font-weight", "700")
+                .set("font-size", "14px").set("border", "none")
+                .set("cursor", "pointer").set("margin-top", "6px");
+
+        kirimBtn.addClickListener(e -> {
+            if (fotoNameArr[0] == null) {
+                err("Upload foto bukti kerusakan terlebih dahulu!");
+                return;
+            }
+            if (catatanField.getValue().isBlank()) {
+                err("Isi deskripsi kerusakan terlebih dahulu!");
+                return;
+            }
+
+            String savedFoto = null;
+            try {
+                savedFoto = property24.util.FileUploadHelper.saveImage(buffer, fotoNameArr[0]);
+            } catch (Exception ex) {
+                err("Gagal menyimpan foto bukti kerusakan!");
+                return;
+            }
+
+            try {
+                String fullNote = "[LAPORAN KERUSAKAN USER] " + catatanField.getValue().trim();
+                pinjamanService.submitPengembalian(detail, fullNote, savedFoto);
+                ok("Laporan kerusakan berhasil dikirim. Menunggu verifikasi admin.");
+                switchTab("myitems");
+            } catch (Exception ex) {
+                err("Gagal mengirim laporan kerusakan: " + ex.getMessage());
+            }
+        });
+        page.add(kirimBtn);
 
         contentArea.add(page);
     }

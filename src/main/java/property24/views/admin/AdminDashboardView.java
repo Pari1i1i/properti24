@@ -2014,6 +2014,17 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("font-weight", "700").set("padding", "4px 12px")
                 .set("border-radius", "20px");
 
+        boolean isDamageReport = p.getCatatanKondisi() != null && p.getCatatanKondisi().contains("[LAPORAN KERUSAKAN USER]");
+        if (isDamageReport) {
+            Span dmgBadge = new Span("⚠️ LAPORAN KERUSAKAN USER");
+            dmgBadge.getStyle()
+                    .set("background", "#ffebee").set("color", "#c62828")
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
+                    .set("font-weight", "700").set("padding", "4px 12px")
+                    .set("border-radius", "20px");
+            topRow.add(dmgBadge);
+        }
+
         Span idSpan = new Span("ID Pengembalian #" + p.getId());
         idSpan.getStyle()
                 .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
@@ -2051,7 +2062,7 @@ public class AdminDashboardView extends HorizontalLayout {
 
         // Catatan kondisi user
         if (p.getCatatanKondisi() != null && !p.getCatatanKondisi().isBlank()) {
-            grid.add(detailField("💬 Catatan User", p.getCatatanKondisi()));
+            grid.add(detailField("💬 Catatan Kondisi User", p.getCatatanKondisi()));
         }
 
         // Admin yang menyetujui
@@ -2072,7 +2083,7 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("border-radius", "12px")
                     .set("padding", "14px")
                     .set("border", "1px solid rgba(77,143,77,0.15)");
-            Span fotoLabel = new Span("📸 Foto Bukti Penempatan Barang:");
+            Span fotoLabel = new Span("📸 Foto Bukti Pengembalian / Kerusakan:");
             fotoLabel.getStyle()
                     .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
                     .set("font-weight", "600").set("color", "#4d6a4d").set("display", "block")
@@ -2120,22 +2131,124 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("display", "flex").set("gap", "12px")
                     .set("margin-top", "4px").set("flex-wrap", "wrap");
 
-            Button approveBtn = new Button("✔ Setujui Pengembalian");
+            Button approveBtn = new Button(isDamageReport ? "✔ Verifikasi & Process Retur" : "✔ Setujui Pengembalian");
             approveBtn.getStyle()
-                    .set("background", "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
+                    .set("background", isDamageReport ? "linear-gradient(135deg, #e07a2a, #b35c17)" : "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
                     .set("color", "white").set("font-weight", "700")
                     .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                     .set("border", "none").set("border-radius", "10px")
                     .set("padding", "0 20px").set("height", "42px").set("cursor", "pointer")
                     .set("flex", "1");
+
             approveBtn.addClickListener(e -> {
-                pinjamanService.approvePengembalian(p, currentUser);
-                // Update badge
-                int pending = pinjamanService.getPendingPengembalian().size();
-                navApproveBadge.setText(String.valueOf(pending));
-                navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
-                ok("✔ Pengembalian #" + p.getId() + " berhasil disetujui!");
-                refreshApproveCards(container, filter);
+                if (isDamageReport) {
+                    // Dialog verifikasi kerusakan & penentuan status aset
+                    Dialog vDialog = new Dialog();
+                    vDialog.setModal(true);
+                    vDialog.setWidth("min(440px, 92vw)");
+
+                    VerticalLayout vContent = new VerticalLayout();
+                    vContent.getStyle()
+                            .set("background", "#ffffff")
+                            .set("border-radius", "16px")
+                            .set("padding", "20px");
+                    vContent.setSpacing(false);
+                    vContent.setPadding(false);
+
+                    Span vTitle = new Span("⚠️ Verifikasi Laporan Kerusakan");
+                    vTitle.getStyle()
+                            .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
+                            .set("font-weight", "800").set("color", "#c62828").set("display", "block");
+                    Span vSub = new Span("Tentukan status barang " + (barang != null ? barang.getNamaBarang() : "") + " setelah pengembalian:");
+                    vSub.getStyle()
+                            .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                            .set("color", "#6a7a6a").set("margin-top", "4px").set("display", "block");
+
+                    ComboBox<String> actionBox = new ComboBox<>("Status Barang Setelah Dikembalikan *");
+                    actionBox.setItems("Status RUSAK (Tersimpan di Aset)", "Status DIPERBAIKI (Masuk Bengkel/Teknisi)", "Kondisi BAIK (Tersedia Kembali)");
+                    actionBox.setValue("Status RUSAK (Tersimpan di Aset)");
+                    actionBox.setWidthFull();
+                    actionBox.getStyle().set("margin-top", "12px");
+
+                    TextField teknisiF = new TextField("Teknisi / Vendor (Khusus Perbaikan)");
+                    teknisiF.setPlaceholder("Nama teknisi / vendor");
+                    teknisiF.setWidthFull();
+                    teknisiF.setVisible(false);
+
+                    TextField biayaF = new TextField("Estimasi Biaya Rp (Khusus Perbaikan)");
+                    biayaF.setPlaceholder("Contoh: 150000");
+                    biayaF.setWidthFull();
+                    biayaF.setVisible(false);
+
+                    actionBox.addValueChangeListener(ve -> {
+                        boolean isPerbaikan = "Status DIPERBAIKI (Masuk Bengkel/Teknisi)".equals(ve.getValue());
+                        teknisiF.setVisible(isPerbaikan);
+                        biayaF.setVisible(isPerbaikan);
+                    });
+
+                    Div vBtns = new Div();
+                    vBtns.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
+
+                    Button vCancel = new Button("Batal", ce -> vDialog.close());
+                    vCancel.getStyle()
+                            .set("background", "#f0f4f0").set("color", "#555")
+                            .set("font-weight", "600").set("font-family", "'Inter', sans-serif")
+                            .set("border", "none").set("border-radius", "8px")
+                            .set("height", "40px").set("cursor", "pointer");
+
+                    Button vConfirm = new Button("Konfirmasi Retur");
+                    vConfirm.getStyle()
+                            .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)").set("color", "white")
+                            .set("border", "none").set("border-radius", "8px").set("font-weight", "700")
+                            .set("height", "40px").set("cursor", "pointer").set("flex", "1")
+                            .set("font-family", "'Inter', sans-serif");
+
+                    vConfirm.addClickListener(ce -> {
+                        String sel = actionBox.getValue();
+                        Barang.Status targetStatus = Barang.Status.rusak;
+                        if ("Status DIPERBAIKI (Masuk Bengkel/Teknisi)".equals(sel)) {
+                            targetStatus = Barang.Status.diperbaiki;
+                        } else if ("Kondisi BAIK (Tersedia Kembali)".equals(sel)) {
+                            targetStatus = Barang.Status.tersedia;
+                        }
+
+                        pinjamanService.approvePengembalian(p, currentUser, targetStatus);
+
+                        // If entering repair, create repair log
+                        if (targetStatus == Barang.Status.diperbaiki && barang != null) {
+                            BigDecimal biaya = BigDecimal.ZERO;
+                            try {
+                                if (!biayaF.getValue().isBlank())
+                                    biaya = new BigDecimal(biayaF.getValue().replace(",", ""));
+                            } catch (Exception ignored) {}
+                            perbaikanService.laporKerusakan(
+                                    barang, borrower,
+                                    p.getCatatanKondisi(),
+                                    teknisiF.getValue(),
+                                    biaya
+                            );
+                        }
+
+                        int pending = pinjamanService.getPendingPengembalian().size();
+                        navApproveBadge.setText(String.valueOf(pending));
+                        navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
+                        ok("Pengembalian #" + p.getId() + " disetujui. Status barang: " + targetStatus.name().toUpperCase());
+                        vDialog.close();
+                        refreshApproveCards(container, filter);
+                    });
+
+                    vBtns.add(vCancel, vConfirm);
+                    vContent.add(vTitle, vSub, actionBox, teknisiF, biayaF, vBtns);
+                    vDialog.add(vContent);
+                    vDialog.open();
+                } else {
+                    pinjamanService.approvePengembalian(p, currentUser, Barang.Status.tersedia);
+                    int pending = pinjamanService.getPendingPengembalian().size();
+                    navApproveBadge.setText(String.valueOf(pending));
+                    navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
+                    ok("✔ Pengembalian #" + p.getId() + " berhasil disetujui!");
+                    refreshApproveCards(container, filter);
+                }
             });
 
             Button rejectBtn = new Button("✘ Tolak");
@@ -2691,6 +2804,11 @@ public class AdminDashboardView extends HorizontalLayout {
                     (b.getKodeBarang() != null ? " [" + b.getKodeBarang() + "]" : ""));
             barangBox.setWidthFull();
 
+            ComboBox<String> statusTujuanBox = new ComboBox<>("Tindakan Admin *");
+            statusTujuanBox.setItems("Tandai Rusak (Tersimpan di Aset)", "Langsung Masuk Perbaikan (Bengkel/Teknisi)");
+            statusTujuanBox.setValue("Tandai Rusak (Tersimpan di Aset)");
+            statusTujuanBox.setWidthFull();
+
             TextArea catatanField = new TextArea("Deskripsi Kerusakan *");
             catatanField.setPlaceholder("Jelaskan kerusakan yang terjadi secara detail...");
             catatanField.setMinHeight("90px");
@@ -2728,10 +2846,13 @@ public class AdminDashboardView extends HorizontalLayout {
                     if (!biayaField.getValue().isBlank())
                         biaya = new BigDecimal(biayaField.getValue().replace(",", ""));
                 } catch (NumberFormatException ignored) {}
-                perbaikanService.laporKerusakan(
+                RiwayatPerbaikan rp = perbaikanService.laporKerusakan(
                         barangBox.getValue(), currentUser,
                         catatanField.getValue(), teknisiField.getValue(), biaya);
-                ok("Kerusakan berhasil dilaporkan. Status barang menjadi RUSAK.");
+                if ("Langsung Masuk Perbaikan (Bengkel/Teknisi)".equals(statusTujuanBox.getValue())) {
+                    perbaikanService.mulaiPerbaikan(rp, teknisiField.getValue());
+                }
+                ok("Kerusakan berhasil dilaporkan.");
                 d.close();
                 refreshKerusakanCards(cardsContainer, "all");
                 for (Span s : tabBtns)
@@ -2739,7 +2860,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 tabBtns[0].getStyle().set("background", "#e07a2a").set("color", "white");
             });
             btnRow.add(cancel, submit);
-            content.add(hdr, hr, barangBox, catatanField, teknisiField, biayaField, btnRow);
+            content.add(hdr, hr, barangBox, statusTujuanBox, catatanField, teknisiField, biayaField, btnRow);
             d.add(content);
             d.open();
         });

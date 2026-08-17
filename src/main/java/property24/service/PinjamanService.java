@@ -100,7 +100,7 @@ public class PinjamanService {
 
     // Admin verification approval
     @Transactional
-    public void approvePengembalian(Pengembalian p, User admin) {
+    public void approvePengembalian(Pengembalian p, User admin, Barang.Status newStatus) {
         p.setStatusAcc(Pengembalian.StatusAcc.approved);
         p.setAdminAcc(admin);
         pengembalianRepository.save(p);
@@ -112,10 +112,15 @@ public class PinjamanService {
 
             if (detail.getBarang() != null) {
                 Barang b = detail.getBarang();
-                b.setStatus(Barang.Status.tersedia);
+                b.setStatus(newStatus != null ? newStatus : Barang.Status.tersedia);
                 barangRepository.save(b);
             }
         }
+    }
+
+    @Transactional
+    public void approvePengembalian(Pengembalian p, User admin) {
+        approvePengembalian(p, admin, Barang.Status.tersedia);
     }
 
     // Admin rejection
