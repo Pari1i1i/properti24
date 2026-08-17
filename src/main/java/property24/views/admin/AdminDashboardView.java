@@ -276,12 +276,12 @@ public class AdminDashboardView extends HorizontalLayout {
         logoutBtn.setTitle("Logout");
         logoutBtn.addClickListener(e -> {
             Dialog confirmDialog = new Dialog();
-            confirmDialog.setWidth("320px");
+            confirmDialog.setWidth("380px");
 
             Div content = new Div();
             content.getStyle()
                     .set("display", "flex").set("flex-direction", "column")
-                    .set("gap", "14px").set("padding", "4px");
+                    .set("gap", "14px").set("padding", "16px 20px");
 
             Span title = new Span("🚪 Konfirmasi Logout");
             title.getStyle()
@@ -1797,7 +1797,8 @@ public class AdminDashboardView extends HorizontalLayout {
             "  padding-left:12px!important;" +
             "}" +
             "vaadin-text-field.dashboard-search::part(value){color:#1a2e1a!important;}" +
-            "vaadin-text-field.dashboard-search::part(placeholder){color:rgba(60,100,60,0.45)!important;}";
+            "vaadin-text-field.dashboard-search::part(placeholder){color:rgba(60,100,60,0.45)!important;}" +
+            "vaadin-dialog-overlay::part(content){padding:24px!important;border-radius:18px!important;}";
         getElement().executeJs(
             "if(!document.getElementById('p24-dash-css')){" +
             "  const s=document.createElement('style');" +
@@ -2076,11 +2077,11 @@ public class AdminDashboardView extends HorizontalLayout {
                 deleteBtn.addClickListener(ev -> {
                     // Confirmation dialog
                     Dialog confirm = new Dialog();
-                    confirm.setWidth("360px");
+                    confirm.setWidth("380px");
 
                     Div dContent = new Div();
                     dContent.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "14px")
-                            .set("padding", "4px");
+                            .set("padding", "16px 20px");
 
                     Span dTitle = new Span("⚠️ Hapus User?");
                     dTitle.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "16px")

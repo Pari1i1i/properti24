@@ -1727,7 +1727,8 @@ public class UserDashboardView extends Div {
             "vaadin-text-field.user-search::part(input-field){background:rgba(255,255,255,0.12)!important;" +
             "border-radius:22px!important;border:1px solid rgba(143,176,138,0.3)!important;}" +
             "vaadin-text-field.user-search::part(value){color:white!important;}" +
-            "vaadin-text-field.user-search::part(placeholder){color:rgba(184,201,191,0.5)!important;}";
+            "vaadin-text-field.user-search::part(placeholder){color:rgba(184,201,191,0.5)!important;}" +
+            "vaadin-dialog-overlay::part(content){padding:24px!important;border-radius:18px!important;}";
         getElement().executeJs(
             "if(!document.getElementById('p24-user-css')){" +
             "  const s=document.createElement('style');" +
@@ -1832,12 +1833,12 @@ public class UserDashboardView extends Div {
 
         logoutBtn.addClickListener(ev -> {
             Dialog confirmDialog = new Dialog();
-            confirmDialog.setWidth("320px");
+            confirmDialog.setWidth("380px");
 
             Div cContent = new Div();
             cContent.getStyle()
                     .set("display", "flex").set("flex-direction", "column")
-                    .set("gap", "14px").set("padding", "4px");
+                    .set("gap", "14px").set("padding", "16px 20px");
 
             Span cTitle = new Span("\ud83d\udeaa Konfirmasi Logout");
             cTitle.getStyle()
