@@ -207,17 +207,12 @@ public class UserDashboardView extends Div {
                 .set("padding", "14px 16px 10px")
                 .set("flex-shrink", "0");
 
-        Div menuBtn = new Div();
-        menuBtn.getElement().setProperty("innerHTML",
-                "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='rgba(184,201,191,0.8)' stroke-width='2'>"
-                + IC_MENU + "</svg>");
-        menuBtn.getStyle().set("cursor", "pointer");
-
         Div logoWrap = new Div();
         logoWrap.getStyle()
                 .set("display", "flex")
                 .set("flex-direction", "column")
-                .set("align-items", "center");
+                .set("align-items", "center")
+                .set("margin-right", "auto");
 
         Div logoRow = new Div();
         logoRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "6px");
@@ -253,7 +248,7 @@ public class UserDashboardView extends Div {
         avatar.getStyle().set("cursor", "pointer");
         avatar.addClickListener(e -> showProfileDialog());
 
-        bar.add(menuBtn, logoWrap, avatar);
+        bar.add(logoWrap, avatar);
         return bar;
     }
 
