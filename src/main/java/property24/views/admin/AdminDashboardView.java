@@ -2479,36 +2479,41 @@ public class AdminDashboardView extends HorizontalLayout {
                 actionRow.add(approveBtn, rejectBtn);
                 card.add(actionRow);
             } else if (bk.getStatus() == Booking.BookingStatus.disetujui) {
+                // Info note: user handles their own pickup confirmation
+                Div infoNote = new Div();
+                infoNote.getStyle()
+                        .set("background", "#e8f5e9").set("border", "1px solid #a5d6a7")
+                        .set("border-radius", "10px").set("padding", "10px 14px")
+                        .set("display", "flex").set("gap", "10px").set("align-items", "flex-start")
+                        .set("margin-top", "6px");
+                Span noteIcon = new Span("✅");
+                noteIcon.getStyle().set("font-size", "14px").set("flex-shrink", "0");
+                Span noteText = new Span("Booking telah disetujui. User akan mengkonfirmasi pengambilan barang secara mandiri dari aplikasi mereka.");
+                noteText.getStyle()
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                        .set("color", "#2e7d32").set("line-height", "1.5").set("font-weight", "500");
+                infoNote.add(noteIcon, noteText);
+
                 Div actionRow = new Div();
                 actionRow.getStyle()
-                        .set("display", "flex").set("gap", "12px")
-                        .set("margin-top", "6px").set("flex-wrap", "wrap");
+                        .set("display", "flex").set("justify-content", "flex-end")
+                        .set("margin-top", "10px");
 
-                Button handoverBtn = new Button("📦 Serahkan Barang (Pinjamkan)");
-                handoverBtn.getStyle()
-                        .set("background", "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
-                        .set("color", "white").set("font-weight", "700")
-                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
-                        .set("border", "none").set("border-radius", "10px")
-                        .set("padding", "0 20px").set("height", "42px").set("cursor", "pointer")
-                        .set("flex", "1");
-                handoverBtn.addClickListener(e -> showAdminHandoverDialog(bk, () -> refreshAdminBookingCards(container, filter)));
-
-                Button cancelBtn = new Button("Batalkan");
+                Button cancelBtn = new Button("Batalkan Booking");
                 cancelBtn.getStyle()
                         .set("background", "white").set("color", "#c62828")
                         .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
-                        .set("font-size", "13px").set("border", "1px solid #ef9a9a")
-                        .set("border-radius", "10px").set("padding", "0 20px")
-                        .set("height", "42px").set("cursor", "pointer");
+                        .set("font-size", "12px").set("border", "1px solid #ef9a9a")
+                        .set("border-radius", "10px").set("padding", "0 16px")
+                        .set("height", "36px").set("cursor", "pointer");
                 cancelBtn.addClickListener(e -> {
                     bookingService.cancelBooking(bk, currentUser);
                     ok("Booking dibatalkan.");
                     refreshAdminBookingCards(container, filter);
                 });
 
-                actionRow.add(handoverBtn, cancelBtn);
-                card.add(actionRow);
+                actionRow.add(cancelBtn);
+                card.add(infoNote, actionRow);
             }
 
             container.add(card);

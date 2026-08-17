@@ -1935,8 +1935,7 @@ public class UserDashboardView extends Div {
     private void showFinalizeBookingDialog(Booking bk) {
         Dialog d = new Dialog();
         d.setModal(true);
-        d.setWidth("92vw");
-        d.setMaxWidth("440px");
+        d.setWidth("min(440px, 92vw)");
 
         VerticalLayout layout = new VerticalLayout();
         layout.getStyle()
@@ -1950,14 +1949,14 @@ public class UserDashboardView extends Div {
         Div headerBar = new Div();
         headerBar.getStyle()
                 .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
-                .set("padding", "18px 22px 16px")
+                .set("padding", "16px 22px 14px")
                 .set("border-radius", "20px 20px 0 0");
 
-        Span headerTitle = new Span("📦 Konfirmasi Pengambilan Barang");
-        headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
+        Span headerTitle = new Span("📦 Konfirmasi Pengambilan");
+        headerTitle.getStyle().set("color", "white").set("font-size", "16px").set("font-weight", "800").set("display", "block");
 
-        Span headerSub = new Span("Booking Anda telah disetujui admin. Lengkapi data untuk mengambil barang.");
-        headerSub.getStyle().set("color", "rgba(255,255,255,0.9)").set("font-size", "11px").set("margin-top", "3px").set("display", "block");
+        Span headerSub = new Span("Booking disetujui admin. Lengkapi data untuk mengambil barang.");
+        headerSub.getStyle().set("color", "rgba(255,255,255,0.85)").set("font-size", "11px").set("margin-top", "3px").set("display", "block").set("line-height", "1.4");
         headerBar.add(headerTitle, headerSub);
 
         // Read-only info section
