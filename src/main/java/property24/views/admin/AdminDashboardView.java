@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 @Route("admin-dashboard")
 @PageTitle("Dashboard Admin | Property 24")
@@ -205,10 +206,7 @@ public class AdminDashboardView extends HorizontalLayout {
 
         // Click handlers
         navDashboard.addClickListener(e -> setActiveNav("dashboard"));
-        navBorrowed.addClickListener(e -> {
-            setActiveNav("borrowed");
-            info("Halaman Borrowed coming soon!");
-        });
+        navBorrowed.addClickListener(e -> setActiveNav("borrowed"));
         navBooking.addClickListener(e -> setActiveNav("booking"));
         navApprove.addClickListener(e -> setActiveNav("approve"));
         navKerusakan.addClickListener(e -> setActiveNav("kerusakan"));
@@ -357,7 +355,9 @@ public class AdminDashboardView extends HorizontalLayout {
 
         if (mainBodyContainer != null) {
             mainBodyContainer.removeAll();
-            if ("approve".equals(which)) {
+            if ("borrowed".equals(which)) {
+                mainBodyContainer.add(buildBorrowedView());
+            } else if ("approve".equals(which)) {
                 mainBodyContainer.add(buildApproveView());
             } else if ("booking".equals(which)) {
                 try {
@@ -1823,6 +1823,308 @@ public class AdminDashboardView extends HorizontalLayout {
     // ════════════════════════════════════════════════════════════════════════
     // APPROVE ASSETS VIEW
     // ════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
+    // BORROWED VIEW – All borrowed items across all users (Admin)
+    // ════════════════════════════════════════════════════════════════════════
+    private Div buildBorrowedView() {
+        Div root = new Div();
+        root.getStyle()
+                .set("flex", "1")
+                .set("overflow-y", "auto")
+                .set("padding", "28px")
+                .set("background", "#f0f4f1");
+
+        // ── Header ──────────────────────────────────────────────────────────
+        Div header = new Div();
+        header.getStyle().set("margin-bottom", "24px");
+
+        Div titleRow = new Div();
+        titleRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px").set("margin-bottom", "6px");
+        Div titleIcon = new Div();
+        titleIcon.getElement().setProperty("innerHTML", svgStr(ICON_CLIPBOARD, "22", "#4d8f4d"));
+        titleIcon.getStyle().set("display", "flex").set("align-items", "center");
+        Span titleTxt = new Span("Daftar Barang Dipinjam");
+        titleTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "22px")
+                .set("font-weight", "800")
+                .set("color", "#1a2e1a");
+        titleRow.add(titleIcon, titleTxt);
+
+        Span subTxt = new Span("Pantau semua barang yang sedang dipinjam oleh user, termasuk status pengembalian dan tanggal jatuh tempo.");
+        subTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px")
+                .set("color", "#6a8a6a");
+        header.add(titleRow, subTxt);
+        root.add(header);
+
+        // ── Filter Tabs ──────────────────────────────────────────────────────
+        String[] tabs    = {"Semua", "Aktif", "Overdue", "Pending Return", "Ditolak", "Selesai"};
+        String[] tabKeys = {"all",   "active", "overdue", "pending",       "rejected", "returned"};
+        Div tabRow = new Div();
+        tabRow.getStyle()
+                .set("display", "flex").set("gap", "8px").set("margin-bottom", "20px")
+                .set("flex-wrap", "wrap");
+        Span[] tabBtns = new Span[tabs.length];
+
+        Div cardsContainer = new Div();
+        cardsContainer.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "repeat(auto-fill, minmax(320px, 1fr))")
+                .set("gap", "16px");
+
+        List<PinjamanDetail> allDetails = pinjamanService.getAllDetails();
+        String[] activeTab = {"all"};
+
+        Runnable refreshCards = () -> {
+            cardsContainer.removeAll();
+            LocalDate today = LocalDate.now();
+            List<PinjamanDetail> filtered = allDetails.stream().filter(d -> {
+                boolean isReturned = Boolean.TRUE.equals(d.getSudahDikembalikan());
+                Optional<Pengembalian> pen = pinjamanService.getPengembalianForDetail(d);
+                Pengembalian.StatusAcc acc = pen.map(Pengembalian::getStatusAcc).orElse(null);
+                boolean isPending  = !isReturned && acc == Pengembalian.StatusAcc.pending;
+                boolean isRejected = !isReturned && acc == Pengembalian.StatusAcc.rejected;
+                boolean isActive   = !isReturned && acc == null;
+                boolean isOverdue  = isActive && d.getTglRencanaKembali() != null && d.getTglRencanaKembali().isBefore(today);
+                return switch (activeTab[0]) {
+                    case "active"   -> isActive && !isOverdue;
+                    case "overdue"  -> isOverdue;
+                    case "pending"  -> isPending;
+                    case "rejected" -> isRejected;
+                    case "returned" -> isReturned;
+                    default         -> true;
+                };
+            }).toList();
+
+            if (filtered.isEmpty()) {
+                Div empty = new Div();
+                empty.getStyle()
+                        .set("grid-column", "1/-1")
+                        .set("text-align", "center").set("padding", "48px")
+                        .set("color", "#8fb08a").set("font-family", "'Inter',sans-serif")
+                        .set("font-size", "14px");
+                empty.setText("Tidak ada data untuk kategori ini.");
+                cardsContainer.add(empty);
+            } else {
+                for (PinjamanDetail d : filtered) {
+                    cardsContainer.add(buildAdminBorrowCard(d, today));
+                }
+            }
+        };
+
+        for (int i = 0; i < tabs.length; i++) {
+            Span tb = new Span(tabs[i]);
+            final String key = tabKeys[i];
+            final int idx = i;
+            tb.getStyle()
+                    .set("padding", "6px 18px")
+                    .set("border-radius", "20px")
+                    .set("font-family", "'Inter', sans-serif")
+                    .set("font-size", "12px")
+                    .set("font-weight", "600")
+                    .set("cursor", "pointer")
+                    .set("transition", "all 0.2s");
+            if (i == 0) {
+                tb.getStyle().set("background", "#4d8f4d").set("color", "white");
+            } else {
+                tb.getStyle().set("background", "white").set("color", "#5a7a5a")
+                        .set("border", "1px solid #d4e8d4");
+            }
+            tabBtns[i] = tb;
+            tb.addClickListener(ev -> {
+                activeTab[0] = key;
+                for (int j = 0; j < tabBtns.length; j++) {
+                    if (j == idx) {
+                        tabBtns[j].getStyle().set("background", "#4d8f4d").set("color", "white")
+                                .remove("border");
+                    } else {
+                        tabBtns[j].getStyle().set("background", "white").set("color", "#5a7a5a")
+                                .set("border", "1px solid #d4e8d4");
+                    }
+                }
+                refreshCards.run();
+            });
+            tabRow.add(tb);
+        }
+
+        refreshCards.run();
+        root.add(tabRow, cardsContainer);
+        return root;
+    }
+
+    private Div buildAdminBorrowCard(PinjamanDetail d, LocalDate today) {
+        Barang b      = d.getBarang();
+        User borrower = d.getPinjaman() != null ? d.getPinjaman().getUser() : null;
+
+        Optional<Pengembalian> pen = pinjamanService.getPengembalianForDetail(d);
+        Pengembalian.StatusAcc acc = pen.map(Pengembalian::getStatusAcc).orElse(null);
+
+        boolean isReturned = Boolean.TRUE.equals(d.getSudahDikembalikan());
+        boolean isPending  = !isReturned && acc == Pengembalian.StatusAcc.pending;
+        boolean isRejected = !isReturned && acc == Pengembalian.StatusAcc.rejected;
+        boolean isActive   = !isReturned && acc == null;
+        boolean isOverdue  = isActive && d.getTglRencanaKembali() != null && d.getTglRencanaKembali().isBefore(today);
+
+        String statusTxt, statusClr, statusBg;
+        if (isReturned) {
+            statusTxt = "SELESAI"; statusClr = "#2ed573"; statusBg = "rgba(46,213,115,0.13)";
+        } else if (isPending) {
+            statusTxt = "PENDING RETURN"; statusClr = "#ffd32a"; statusBg = "rgba(255,211,42,0.13)";
+        } else if (isRejected) {
+            statusTxt = "DITOLAK"; statusClr = "#ff5252"; statusBg = "rgba(255,82,82,0.13)";
+        } else if (isOverdue) {
+            statusTxt = "OVERDUE"; statusClr = "#ff5252"; statusBg = "rgba(255,82,82,0.13)";
+        } else {
+            statusTxt = "AKTIF"; statusClr = "#4d8f4d"; statusBg = "rgba(77,143,77,0.13)";
+        }
+
+        Div card = new Div();
+        card.getStyle()
+                .set("background", "white")
+                .set("border-radius", "14px")
+                .set("padding", "18px 20px")
+                .set("box-shadow", "0 2px 8px rgba(0,0,0,0.06)")
+                .set("border", isOverdue || isRejected ? "1px solid #ffd7d7" : "1px solid #e8f0e8")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("gap", "10px");
+
+        // ── Top row: thumb + name + badge ──
+        Div topRow = new Div();
+        topRow.getStyle().set("display", "flex").set("gap", "12px").set("align-items", "flex-start");
+
+        Div thumb = new Div();
+        thumb.getStyle()
+                .set("width", "52px").set("height", "52px").set("flex-shrink", "0")
+                .set("border-radius", "10px").set("overflow", "hidden")
+                .set("background", "#e8f0ea").set("display", "flex")
+                .set("align-items", "center").set("justify-content", "center");
+        if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
+            Image img = new Image("images/" + b.getFotoBarang().trim(), "");
+            img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
+            thumb.add(img);
+        } else {
+            Span ic = new Span("📦");
+            ic.getStyle().set("font-size", "22px");
+            thumb.add(ic);
+        }
+
+        Div info = new Div();
+        info.getStyle().set("flex", "1").set("min-width", "0");
+
+        Div nameRow = new Div();
+        nameRow.getStyle().set("display", "flex").set("align-items", "center")
+                .set("justify-content", "space-between").set("gap", "8px");
+        Span nameSpan = new Span(b != null ? b.getNamaBarang() : "—");
+        nameSpan.getStyle()
+                .set("font-family", "'Inter',sans-serif").set("font-size", "15px")
+                .set("font-weight", "700").set("color", "#1a2e1a")
+                .set("overflow", "hidden").set("text-overflow", "ellipsis").set("white-space", "nowrap");
+
+        Div badge = new Div();
+        badge.setText(statusTxt);
+        badge.getStyle()
+                .set("background", statusBg).set("color", statusClr)
+                .set("font-size", "9px").set("font-weight", "700")
+                .set("padding", "3px 10px").set("border-radius", "20px")
+                .set("border", "1px solid " + statusClr).set("flex-shrink", "0")
+                .set("font-family", "'Inter',sans-serif");
+
+        nameRow.add(nameSpan, badge);
+
+        String kode = b != null && b.getKodeBarang() != null ? b.getKodeBarang()
+                : (b != null ? "AST-" + String.format("%03d", b.getId()) : "—");
+        Span kodeSpan = new Span(kode);
+        kodeSpan.getStyle().set("font-size", "11px").set("color", "#8fb08a")
+                .set("font-weight", "600").set("font-family", "'Inter',sans-serif");
+
+        info.add(nameRow, kodeSpan);
+        topRow.add(thumb, info);
+        card.add(topRow);
+
+        // ── Divider ──
+        Div divider = new Div();
+        divider.getStyle().set("border-top", "1px solid #f0f0f0");
+        card.add(divider);
+
+        // ── Meta grid ──
+        Div meta = new Div();
+        meta.getStyle()
+                .set("display", "grid")
+                .set("grid-template-columns", "1fr 1fr")
+                .set("gap", "6px 16px");
+
+        // Borrower
+        String borrowerName = borrower != null ? borrower.getNamaLengkap() : "—";
+        meta.add(metaItem("👤 Peminjam", borrowerName));
+
+        // Location
+        String ruanganStr = d.getRuangan() != null ? d.getRuangan().getNamaRuangan() : "—";
+        meta.add(metaItem("📍 Lokasi", ruanganStr));
+
+        // Borrow date
+        String borrowDate = d.getPinjaman() != null && d.getPinjaman().getTglPinjam() != null
+                ? d.getPinjaman().getTglPinjam().format(DateTimeFormatter.ofPattern("d MMM yyyy")) : "—";
+        meta.add(metaItem("📅 Tgl Pinjam", borrowDate));
+
+        // Due date (highlight red if overdue)
+        String dueDate = d.getTglRencanaKembali() != null
+                ? d.getTglRencanaKembali().format(DateTimeFormatter.ofPattern("d MMM yyyy")) : "—";
+        Div dueMeta = metaItem("⏰ Jatuh Tempo", dueDate);
+        if (isOverdue && !isReturned) {
+            dueMeta.getChildren()
+                    .filter(c -> c instanceof Span)
+                    .map(c -> (Span) c)
+                    .forEach(s -> s.getStyle().set("color", "#ff5252").set("font-weight", "700"));
+        }
+        meta.add(dueMeta);
+
+        // Tujuan pinjam
+        if (d.getTujuanPinjam() != null && !d.getTujuanPinjam().isBlank()) {
+            Div tujuanItem = metaItem("📝 Tujuan", d.getTujuanPinjam());
+            tujuanItem.getStyle().set("grid-column", "1 / -1");
+            meta.add(tujuanItem);
+        }
+
+        card.add(meta);
+
+        // ── Rejection note (if any) ──
+        if (isRejected) {
+            String note = pen.get().getCatatanAdmin();
+            if (note != null && !note.isBlank()) {
+                Div noteBox = new Div();
+                noteBox.getStyle()
+                        .set("background", "#ffebee").set("border", "1px solid #ef9a9a")
+                        .set("border-radius", "8px").set("padding", "8px 12px");
+                Span noteSpan = new Span("❌ Alasan tolak: " + note);
+                noteSpan.getStyle().set("font-size", "11px").set("color", "#c62828")
+                        .set("font-family", "'Inter',sans-serif");
+                noteBox.add(noteSpan);
+                card.add(noteBox);
+            }
+        }
+
+        return card;
+    }
+
+    private Div metaItem(String label, String value) {
+        Div item = new Div();
+        item.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "2px");
+        Span labelSpan = new Span(label);
+        labelSpan.getStyle()
+                .set("font-size", "10px").set("color", "#8fb08a")
+                .set("font-weight", "600").set("font-family", "'Inter',sans-serif");
+        Span valueSpan = new Span(value);
+        valueSpan.getStyle()
+                .set("font-size", "12px").set("color", "#1a2e1a")
+                .set("font-weight", "500").set("font-family", "'Inter',sans-serif")
+                .set("overflow", "hidden").set("text-overflow", "ellipsis").set("white-space", "nowrap");
+        item.add(labelSpan, valueSpan);
+        return item;
+    }
+
     private Div buildApproveView() {
         Div root = new Div();
         root.getStyle()

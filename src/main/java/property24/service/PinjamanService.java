@@ -29,6 +29,11 @@ public class PinjamanService {
         return pinjamanDetailRepository.findByPinjamanUserIdAndSudahDikembalikan(user.getId(), false);
     }
 
+    /** Admin: all borrow detail records across all users */
+    public List<PinjamanDetail> getAllDetails() {
+        return pinjamanDetailRepository.findAllByOrderByIdDesc();
+    }
+
     public Optional<Pengembalian> getPengembalianForDetail(PinjamanDetail detail) {
         return pengembalianRepository.findByPinjamanDetailId(detail.getId());
     }

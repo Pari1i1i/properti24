@@ -9,4 +9,6 @@ public interface PinjamanDetailRepository extends JpaRepository<PinjamanDetail, 
     List<PinjamanDetail> findByPinjamanId(Long pinjamanId);
     List<PinjamanDetail> findByPinjamanUserId(Long userId);
     List<PinjamanDetail> findByPinjamanUserIdAndSudahDikembalikan(Long userId, Boolean sudahDikembalikan);
+    List<PinjamanDetail> findAllByOrderByIdDesc();
+    List<PinjamanDetail> findBySudahDikembalikan(Boolean sudahDikembalikan);
 }
