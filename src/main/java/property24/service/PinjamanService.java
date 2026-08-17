@@ -107,15 +107,16 @@ public class PinjamanService {
 
     @Transactional
     public Pengembalian submitPengembalian(PinjamanDetail detail, String catatan, String fotoPengembalian) {
-        Pengembalian p = new Pengembalian();
+        Optional<Pengembalian> existingOpt = pengembalianRepository.findByPinjamanDetailId(detail.getId());
+        Pengembalian p = existingOpt.orElseGet(Pengembalian::new);
         p.setPinjamanDetail(detail);
         p.setCatatanKondisi(catatan);
-        p.setFotoPengembalian(fotoPengembalian);
+        if (fotoPengembalian != null && !fotoPengembalian.isBlank()) {
+            p.setFotoPengembalian(fotoPengembalian);
+        }
         p.setStatusAcc(Pengembalian.StatusAcc.pending);
+        p.setCatatanAdmin(null);
         Pengembalian saved = pengembalianRepository.save(p);
-
-        // NOTE: detail.sudahDikembalikan remains FALSE until admin verifies and approves!
-        // Barang status remains 'dipinjam' until admin verifies.
 
         return saved;
     }

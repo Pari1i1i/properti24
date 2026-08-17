@@ -967,7 +967,7 @@ public class UserDashboardView extends Div {
         // Filter chips
         Div chipsWrap = new Div();
         chipsWrap.getStyle().set("display", "flex").set("gap", "8px").set("margin-bottom", "14px").set("overflow-x", "auto");
-        String[] filters = {"All", "Active", "Pending Return", "Returned"};
+        String[] filters = {"All", "Active", "Pending Return", "Rejected", "Returned"};
         List<Div> filterChipList = new ArrayList<>();
         String[] activeMyFilter = {"All"};
 
@@ -987,11 +987,14 @@ public class UserDashboardView extends Div {
                 .filter(d -> {
                     boolean isReturned = Boolean.TRUE.equals(d.getSudahDikembalikan());
                     Optional<Pengembalian> pengembalian = pinjamanService.getPengembalianForDetail(d);
-                    boolean isPendingReturn = pengembalian.isPresent() && !isReturned;
+                    Pengembalian.StatusAcc pAcc = pengembalian.map(Pengembalian::getStatusAcc).orElse(null);
+                    boolean isPendingReturn = pengembalian.isPresent() && !isReturned && pAcc == Pengembalian.StatusAcc.pending;
+                    boolean isRejectedReturn = pengembalian.isPresent() && !isReturned && pAcc == Pengembalian.StatusAcc.rejected;
 
                     return switch (activeMyFilter[0]) {
-                        case "Active" -> !isReturned && !isPendingReturn;
+                        case "Active" -> !isReturned && !isPendingReturn && !isRejectedReturn;
                         case "Pending Return" -> isPendingReturn;
+                        case "Rejected" -> isRejectedReturn;
                         case "Returned" -> isReturned;
                         default -> true; // All
                     };
@@ -1041,19 +1044,24 @@ public class UserDashboardView extends Div {
     private Div buildMyItemCard(PinjamanDetail d) {
         Barang b = d.getBarang();
         Optional<Pengembalian> pengembalian = pinjamanService.getPengembalianForDetail(d);
+        Pengembalian pObj = pengembalian.orElse(null);
+        Pengembalian.StatusAcc pAcc = pObj != null ? pObj.getStatusAcc() : null;
 
         boolean isReturned = d.getSudahDikembalikan() != null && d.getSudahDikembalikan();
-        boolean hasPengembalian = pengembalian.isPresent();
-        boolean isPendingReturn = hasPengembalian && !isReturned;
+        boolean isPendingReturn = pengembalian.isPresent() && !isReturned && pAcc == Pengembalian.StatusAcc.pending;
+        boolean isRejectedReturn = pengembalian.isPresent() && !isReturned && pAcc == Pengembalian.StatusAcc.rejected;
 
         String statusTxt = isReturned ? "RETURNED"
                 : isPendingReturn ? "PENDING"
+                : isRejectedReturn ? "DITOLAK"
                 : "BORROWED";
         String statusClr = isReturned ? "#2ed573"
                 : isPendingReturn ? "#ffd32a"
+                : isRejectedReturn ? "#ff5252"
                 : "#ff9f43";
         String statusBg = isReturned ? "rgba(46,213,115,0.15)"
                 : isPendingReturn ? "rgba(255,211,42,0.15)"
+                : isRejectedReturn ? "rgba(255,82,82,0.15)"
                 : "rgba(255,159,67,0.15)";
 
         Div card = new Div();
@@ -1138,7 +1146,7 @@ public class UserDashboardView extends Div {
         meta.add(locRow);
 
         // Return & Lapor Rusak buttons (only for active borrowed items)
-        if (!isReturned && !isPendingReturn) {
+        if (!isReturned && !isPendingReturn && !isRejectedReturn) {
             Div btnRow = new Div();
             btnRow.getStyle().set("display", "flex").set("gap", "8px").set("margin-top", "10px");
 
@@ -1170,6 +1178,33 @@ public class UserDashboardView extends Div {
             verTxt.getStyle().set("font-size", "11px").set("color", "#2ed573").set("font-weight", "600");
             verifiedRow.add(checkIco, verTxt);
             meta.add(verifiedRow);
+        } else if (isRejectedReturn) {
+            Div rejectBox = new Div();
+            rejectBox.getStyle()
+                    .set("background", "#ffebee").set("border", "1px solid #ef9a9a")
+                    .set("border-radius", "10px").set("padding", "10px 12px")
+                    .set("margin-top", "10px").set("display", "flex")
+                    .set("flex-direction", "column").set("gap", "6px");
+
+            Span rHeader = new Span("⚠️ Pengembalian Ditolak Admin!");
+            rHeader.getStyle().set("font-size", "12px").set("font-weight", "700").set("color", "#c62828");
+
+            String noteAdmin = pObj != null && pObj.getCatatanAdmin() != null && !pObj.getCatatanAdmin().isBlank()
+                    ? pObj.getCatatanAdmin()
+                    : "Tidak ada catatan spesifik dari admin.";
+            Span rNote = new Span("Alasan Admin: " + noteAdmin);
+            rNote.getStyle().set("font-size", "11px").set("color", "#b71c1c");
+
+            Button reSubmitBtn = new Button("🔄 Ajukan Ulang Pengembalian");
+            reSubmitBtn.getStyle()
+                    .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
+                    .set("color", "white").set("border", "none").set("border-radius", "8px")
+                    .set("font-size", "11px").set("font-weight", "700")
+                    .set("height", "34px").set("cursor", "pointer").set("margin-top", "4px");
+            reSubmitBtn.addClickListener(ev -> showReturnForm(d));
+
+            rejectBox.add(rHeader, rNote, reSubmitBtn);
+            meta.add(rejectBox);
         } else {
             Span pendingTxt = new Span("Waiting for admin verification");
             pendingTxt.getStyle().set("font-size", "11px").set("color", "#8fb08a")
