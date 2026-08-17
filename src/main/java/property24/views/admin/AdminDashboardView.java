@@ -27,10 +27,12 @@ import com.vaadin.flow.router.Route;
 import property24.entity.*;
 import property24.service.BarangService;
 import property24.service.BookingService;
+import property24.service.PerbaikanService;
 import property24.service.PinjamanService;
 import property24.util.AuthSession;
 import property24.util.FileUploadHelper;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -43,6 +45,7 @@ public class AdminDashboardView extends HorizontalLayout {
     private final BarangService barangService;
     private final PinjamanService pinjamanService;
     private final BookingService bookingService;
+    private final PerbaikanService perbaikanService;
 
     // Layout nodes that need to be refreshed
     private Div assetGridContainer;
@@ -62,12 +65,15 @@ public class AdminDashboardView extends HorizontalLayout {
     private Div navBorrowed;
     private Div navBooking;
     private Div navApprove;
+    private Div navKerusakan;
     private Div navSettings;
 
-    public AdminDashboardView(BarangService barangService, PinjamanService pinjamanService, BookingService bookingService) {
+    public AdminDashboardView(BarangService barangService, PinjamanService pinjamanService,
+                               BookingService bookingService, PerbaikanService perbaikanService) {
         this.barangService = barangService;
         this.pinjamanService = pinjamanService;
         this.bookingService = bookingService;
+        this.perbaikanService = perbaikanService;
         this.currentUser = AuthSession.getCurrentUser();
 
         // Auth guard
@@ -164,6 +170,9 @@ public class AdminDashboardView extends HorizontalLayout {
         Div approveLabel = navSection("APPROVE BY ADMIN");
         navApprove   = navItem(ICON_CHECK,     "Approve Pengembalian", false);
         navBooking   = navItem(ICON_CLIPBOARD, "Approve Booking", false);
+
+        Div manageLabel = navSection("MANAJEMEN ASET");
+        navKerusakan = navItem(ICON_SETTINGS,  "Kerusakan & Perbaikan", false);
         navSettings  = navItem(ICON_SETTINGS,  "Settings",  false);
 
         // Pending approvals counter badge on sidebar
@@ -202,12 +211,13 @@ public class AdminDashboardView extends HorizontalLayout {
         });
         navBooking.addClickListener(e -> setActiveNav("booking"));
         navApprove.addClickListener(e -> setActiveNav("approve"));
+        navKerusakan.addClickListener(e -> setActiveNav("kerusakan"));
         navSettings.addClickListener(e -> {
             setActiveNav("settings");
             info("Halaman Settings coming soon!");
         });
 
-        nav.add(navLabel, navDashboard, navBorrowed, approveLabel, navApprove, navBooking, navSettings);
+        nav.add(navLabel, navDashboard, navBorrowed, approveLabel, navApprove, navBooking, manageLabel, navKerusakan, navSettings);
 
         // ── User Info at bottom ───────────────────────────────────────────
         Div userInfo = new Div();
@@ -332,14 +342,16 @@ public class AdminDashboardView extends HorizontalLayout {
         resetNav(navBorrowed);
         resetNav(navBooking);
         resetNav(navApprove);
+        resetNav(navKerusakan);
         resetNav(navSettings);
 
         Div target = switch (which) {
-            case "borrowed" -> navBorrowed;
-            case "booking"  -> navBooking;
-            case "approve"  -> navApprove;
-            case "settings" -> navSettings;
-            default         -> navDashboard;
+            case "borrowed"   -> navBorrowed;
+            case "booking"    -> navBooking;
+            case "approve"    -> navApprove;
+            case "kerusakan"  -> navKerusakan;
+            case "settings"   -> navSettings;
+            default           -> navDashboard;
         };
         activateNav(target);
 
@@ -356,6 +368,8 @@ public class AdminDashboardView extends HorizontalLayout {
                     errDiv.setText("Gagal memuat data booking: " + ex.getMessage());
                     mainBodyContainer.add(errDiv);
                 }
+            } else if ("kerusakan".equals(which)) {
+                mainBodyContainer.add(buildKerusakanView());
             } else {
                 mainBodyContainer.add(buildScrollableBody());
             }
@@ -2568,5 +2582,322 @@ public class AdminDashboardView extends HorizontalLayout {
         content.add(title, hr, tglKembali, btnRow);
         d.add(content);
         d.open();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // KERUSAKAN & PERBAIKAN VIEW
+    // ════════════════════════════════════════════════════════════════════════
+    private Div buildKerusakanView() {
+        Div root = new Div();
+        root.getStyle()
+                .set("flex", "1").set("overflow-y", "auto")
+                .set("padding", "28px").set("background", "#f0f4f1");
+
+        // ── Header ──────────────────────────────────────────────────────────
+        Div header = new Div();
+        header.getStyle().set("margin-bottom", "20px");
+
+        Div titleRow = new Div();
+        titleRow.getStyle().set("display", "flex").set("align-items", "center")
+                .set("justify-content", "space-between").set("margin-bottom", "6px");
+
+        Div titleLeft = new Div();
+        titleLeft.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px");
+        Span titleTxt = new Span("🔧 Kerusakan & Perbaikan Barang");
+        titleTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif").set("font-size", "22px")
+                .set("font-weight", "800").set("color", "#1a2e1a");
+        titleLeft.add(titleTxt);
+
+        Button laporBtn = new Button("＋ Laporkan Kerusakan");
+        laporBtn.getStyle()
+                .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
+                .set("color", "white").set("border", "none").set("border-radius", "10px")
+                .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                .set("font-weight", "700").set("height", "40px").set("padding", "0 20px")
+                .set("cursor", "pointer");
+
+        titleRow.add(titleLeft, laporBtn);
+        Span subTxt = new Span("Catat kerusakan barang, pantau proses perbaikan, dan tandai selesai.");
+        subTxt.getStyle()
+                .set("font-family", "'Inter', sans-serif").set("font-size", "13px").set("color", "#6a8a6a");
+        header.add(titleRow, subTxt);
+        root.add(header);
+
+        // ── Filter Tabs ──────────────────────────────────────────────────────
+        String[] tabs    = {"Semua", "Sedang Proses", "Selesai", "Dibatalkan"};
+        String[] tabKeys = {"all", "proses", "selesai", "dibatalkan"};
+        Div tabRow = new Div();
+        tabRow.getStyle().set("display", "flex").set("gap", "8px")
+                .set("margin-bottom", "20px").set("flex-wrap", "wrap");
+        Span[] tabBtns = new Span[tabs.length];
+
+        Div cardsContainer = new Div();
+        cardsContainer.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "16px");
+
+        for (int i = 0; i < tabs.length; i++) {
+            Span tb = new Span(tabs[i]);
+            final String key = tabKeys[i];
+            tb.getStyle()
+                    .set("padding", "6px 18px").set("border-radius", "20px")
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("font-weight", "600").set("cursor", "pointer").set("transition", "all 0.2s");
+            if (i == 0) tb.getStyle().set("background", "#e07a2a").set("color", "white");
+            else         tb.getStyle().set("background", "rgba(224,122,42,0.10)").set("color", "#e07a2a");
+            tabBtns[i] = tb;
+            final int fi = i;
+            tb.addClickListener(ev -> {
+                for (Span s : tabBtns)
+                    s.getStyle().set("background", "rgba(224,122,42,0.10)").set("color", "#e07a2a");
+                tabBtns[fi].getStyle().set("background", "#e07a2a").set("color", "white");
+                refreshKerusakanCards(cardsContainer, key);
+            });
+            tabRow.add(tb);
+        }
+        root.add(tabRow, cardsContainer);
+        refreshKerusakanCards(cardsContainer, "all");
+
+        // ── Laporkan Kerusakan Dialog ────────────────────────────────────────
+        laporBtn.addClickListener(ev -> {
+            Dialog d = new Dialog();
+            d.setModal(true);
+            d.setWidth("min(460px, 92vw)");
+
+            VerticalLayout content = dialogLayout();
+
+            Div hdr = new Div();
+            Span hdrTitle = new Span("🔧 Laporkan Kerusakan Barang");
+            hdrTitle.getStyle()
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
+                    .set("font-weight", "800").set("color", "#b35c17").set("display", "block");
+            Span hdrSub = new Span("Pilih barang dan deskripsikan kerusakannya.");
+            hdrSub.getStyle()
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("color", "#9a8a8a").set("margin-top", "4px").set("display", "block");
+            hdr.add(hdrTitle, hdrSub);
+
+            Hr hr = new Hr();
+            hr.getStyle().set("border-color", "rgba(0,0,0,0.08)").set("margin", "12px 0");
+
+            ComboBox<Barang> barangBox = new ComboBox<>("Barang yang Rusak *");
+            barangBox.setItems(barangService.getAllBarang());
+            barangBox.setItemLabelGenerator(b -> b.getNamaBarang() +
+                    (b.getKodeBarang() != null ? " [" + b.getKodeBarang() + "]" : ""));
+            barangBox.setWidthFull();
+
+            TextArea catatanField = new TextArea("Deskripsi Kerusakan *");
+            catatanField.setPlaceholder("Jelaskan kerusakan yang terjadi secara detail...");
+            catatanField.setMinHeight("90px");
+            catatanField.setWidthFull();
+
+            TextField teknisiField = new TextField("Teknisi / Vendor (Opsional)");
+            teknisiField.setPlaceholder("Nama teknisi atau vendor perbaikan");
+            teknisiField.setWidthFull();
+
+            TextField biayaField = new TextField("Estimasi Biaya (Opsional)");
+            biayaField.setPlaceholder("Contoh: 150000");
+            biayaField.setWidthFull();
+
+            Div btnRow = new Div();
+            btnRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
+
+            Button cancel = dialogCancelBtn("Batal", d);
+            Button submit = new Button("Simpan Laporan");
+            submit.getStyle()
+                    .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)").set("color", "white")
+                    .set("border", "none").set("border-radius", "8px").set("font-weight", "700")
+                    .set("height", "40px").set("cursor", "pointer").set("flex", "1")
+                    .set("font-family", "'Inter', sans-serif");
+            submit.addClickListener(se -> {
+                if (barangBox.getValue() == null) { err("Pilih barang!"); return; }
+                if (catatanField.getValue().isBlank()) { err("Isi deskripsi kerusakan!"); return; }
+                BigDecimal biaya = BigDecimal.ZERO;
+                try {
+                    if (!biayaField.getValue().isBlank())
+                        biaya = new BigDecimal(biayaField.getValue().replace(",", ""));
+                } catch (NumberFormatException ignored) {}
+                perbaikanService.laporKerusakan(
+                        barangBox.getValue(), currentUser,
+                        catatanField.getValue(), teknisiField.getValue(), biaya);
+                ok("Kerusakan berhasil dilaporkan.");
+                d.close();
+                refreshKerusakanCards(cardsContainer, "all");
+                for (Span s : tabBtns)
+                    s.getStyle().set("background", "rgba(224,122,42,0.10)").set("color", "#e07a2a");
+                tabBtns[0].getStyle().set("background", "#e07a2a").set("color", "white");
+            });
+            btnRow.add(cancel, submit);
+            content.add(hdr, hr, barangBox, catatanField, teknisiField, biayaField, btnRow);
+            d.add(content);
+            d.open();
+        });
+
+        return root;
+    }
+
+    private void refreshKerusakanCards(Div container, String filter) {
+        container.removeAll();
+
+        List<RiwayatPerbaikan> list;
+        if ("proses".equals(filter)) {
+            list = perbaikanService.getByStatus(RiwayatPerbaikan.StatusPerbaikan.proses);
+        } else if ("selesai".equals(filter)) {
+            list = perbaikanService.getByStatus(RiwayatPerbaikan.StatusPerbaikan.selesai);
+        } else if ("dibatalkan".equals(filter)) {
+            list = perbaikanService.getByStatus(RiwayatPerbaikan.StatusPerbaikan.dibatalkan);
+        } else {
+            list = perbaikanService.getAll();
+        }
+
+        if (list.isEmpty()) {
+            Div empty = new Div();
+            empty.getStyle()
+                    .set("text-align", "center").set("padding", "60px 20px")
+                    .set("color", "#8aab8a").set("font-family", "'Inter', sans-serif").set("font-size", "14px");
+            empty.setText("Tidak ada data kerusakan untuk filter ini.");
+            container.add(empty);
+            return;
+        }
+
+        DateTimeFormatter dtFmt = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+
+        for (RiwayatPerbaikan rp : list) {
+            Div card = new Div();
+            card.getStyle()
+                    .set("background", "white").set("border-radius", "16px")
+                    .set("padding", "22px 24px").set("box-shadow", "0 2px 12px rgba(0,0,0,0.07)")
+                    .set("border", "1px solid rgba(0,0,0,0.06)")
+                    .set("display", "flex").set("flex-direction", "column").set("gap", "14px");
+
+            // Status badge + ID
+            Div topRow = new Div();
+            topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
+
+            String stLabel; String stBg; String stColor;
+            switch (rp.getStatusPerbaikan()) {
+                case proses     -> { stLabel = "🔧 SEDANG DIPROSES"; stBg = "#fff3e0"; stColor = "#e65100"; }
+                case selesai    -> { stLabel = "✅ SELESAI";         stBg = "#e8f5e9"; stColor = "#2e7d32"; }
+                case dibatalkan -> { stLabel = "🚫 DIBATALKAN";      stBg = "#f5f5f5"; stColor = "#616161"; }
+                default         -> { stLabel = "—";                  stBg = "#f5f5f5"; stColor = "#9e9e9e"; }
+            }
+
+            Span badge = new Span(stLabel);
+            badge.getStyle()
+                    .set("background", stBg).set("color", stColor)
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
+                    .set("font-weight", "700").set("padding", "4px 12px").set("border-radius", "20px");
+
+            Span idSpan = new Span("ID #" + rp.getId());
+            idSpan.getStyle()
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("color", "#9aaa9a").set("margin-left", "auto");
+            topRow.add(badge, idSpan);
+            card.add(topRow);
+
+            // Detail grid
+            Div grid = new Div();
+            grid.getStyle()
+                    .set("display", "grid").set("grid-template-columns", "1fr 1fr")
+                    .set("gap", "10px 24px");
+
+            Barang b = rp.getBarang();
+            grid.add(detailField("📦 Barang",
+                    b != null ? b.getNamaBarang() + (b.getKodeBarang() != null ? " [" + b.getKodeBarang() + "]" : "") : "—"));
+            grid.add(detailField("📍 Lokasi",
+                    b != null && b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "—"));
+            grid.add(detailField("👤 Dilaporkan Oleh",
+                    rp.getDilaporkanOleh() != null ? rp.getDilaporkanOleh().getNamaLengkap() : "—"));
+            grid.add(detailField("🗓 Tanggal Masuk",
+                    rp.getTglMasuk() != null ? rp.getTglMasuk().format(dtFmt) : "—"));
+            if (rp.getTeknisiVendor() != null && !rp.getTeknisiVendor().isBlank())
+                grid.add(detailField("🔩 Teknisi / Vendor", rp.getTeknisiVendor()));
+            if (rp.getBiaya() != null && rp.getBiaya().compareTo(BigDecimal.ZERO) > 0)
+                grid.add(detailField("💰 Biaya", "Rp " + String.format("%,.0f", rp.getBiaya())));
+            if (rp.getTglSelesai() != null)
+                grid.add(detailField("✅ Tanggal Selesai", rp.getTglSelesai().format(dtFmt)));
+            if (rp.getCatatan() != null && !rp.getCatatan().isBlank())
+                grid.add(detailField("📝 Deskripsi Kerusakan", rp.getCatatan()));
+            card.add(grid);
+
+            // Actions — only for proses
+            if (rp.getStatusPerbaikan() == RiwayatPerbaikan.StatusPerbaikan.proses) {
+                Div actionRow = new Div();
+                actionRow.getStyle().set("display", "flex").set("gap", "10px").set("flex-wrap", "wrap");
+
+                Button selesaiBtn = new Button("✔ Tandai Selesai");
+                selesaiBtn.getStyle()
+                        .set("background", "linear-gradient(135deg,#3a9898,#287373)")
+                        .set("color", "white").set("border", "none").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 18px")
+                        .set("cursor", "pointer").set("flex", "1");
+                selesaiBtn.addClickListener(se -> {
+                    Dialog sd = new Dialog();
+                    sd.setModal(true);
+                    sd.setWidth("min(420px, 92vw)");
+                    VerticalLayout sc = dialogLayout();
+
+                    Span sdTitle = new Span("Tandai Perbaikan Selesai");
+                    sdTitle.getStyle()
+                            .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
+                            .set("font-weight", "800").set("color", "#2e7d32").set("display", "block")
+                            .set("margin-bottom", "14px");
+
+                    TextField biayaAkhirField = new TextField("Biaya Perbaikan Akhir (Rp)");
+                    biayaAkhirField.setPlaceholder("0");
+                    biayaAkhirField.setWidthFull();
+                    if (rp.getBiaya() != null && rp.getBiaya().compareTo(BigDecimal.ZERO) > 0)
+                        biayaAkhirField.setValue(rp.getBiaya().toPlainString());
+
+                    TextArea catatanSelesai = new TextArea("Catatan Penyelesaian (Opsional)");
+                    catatanSelesai.setPlaceholder("Hasil perbaikan, komponen diganti, dll...");
+                    catatanSelesai.setMinHeight("70px");
+                    catatanSelesai.setWidthFull();
+
+                    Div sdBtns = new Div();
+                    sdBtns.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "14px");
+                    Button sdCancel = dialogCancelBtn("Batal", sd);
+                    Button sdConfirm = new Button("Konfirmasi Selesai");
+                    sdConfirm.getStyle()
+                            .set("background", "linear-gradient(135deg,#3a9898,#287373)").set("color", "white")
+                            .set("border", "none").set("border-radius", "8px").set("font-weight", "700")
+                            .set("height", "40px").set("cursor", "pointer").set("flex", "1")
+                            .set("font-family", "'Inter', sans-serif");
+                    sdConfirm.addClickListener(ce -> {
+                        BigDecimal biayaAkhir = BigDecimal.ZERO;
+                        try {
+                            if (!biayaAkhirField.getValue().isBlank())
+                                biayaAkhir = new BigDecimal(biayaAkhirField.getValue().replace(",", ""));
+                        } catch (NumberFormatException ignored) {}
+                        perbaikanService.selesaikanPerbaikan(rp, biayaAkhir, catatanSelesai.getValue());
+                        ok("Perbaikan ditandai selesai. Barang kembali tersedia.");
+                        sd.close();
+                        refreshKerusakanCards(container, filter);
+                    });
+                    sdBtns.add(sdCancel, sdConfirm);
+                    sc.add(sdTitle, biayaAkhirField, catatanSelesai, sdBtns);
+                    sd.add(sc);
+                    sd.open();
+                });
+
+                Button batalBtn = new Button("Batalkan");
+                batalBtn.getStyle()
+                        .set("background", "white").set("color", "#c62828")
+                        .set("border", "1px solid #ef9a9a").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 16px")
+                        .set("cursor", "pointer");
+                batalBtn.addClickListener(be -> {
+                    perbaikanService.batalkanPerbaikan(rp);
+                    ok("Laporan perbaikan dibatalkan. Barang kembali tersedia.");
+                    refreshKerusakanCards(container, filter);
+                });
+
+                actionRow.add(selesaiBtn, batalBtn);
+                card.add(actionRow);
+            }
+
+            container.add(card);
+        }
     }
 }
