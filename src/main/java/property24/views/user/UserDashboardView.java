@@ -1981,18 +1981,31 @@ public class UserDashboardView extends Div {
         infoBox.add(lightDetailRow("Tujuan / Catatan", catatanVal));
 
         // Inputs to fill
+        // Info rows — full width, no isolated box
+        infoBox.getStyle()
+                .set("background", "transparent")
+                .set("border", "none")
+                .set("border-radius", "0")
+                .set("padding", "0")
+                .set("margin-bottom", "0");
+
         DatePicker tglKembaliPicker = new DatePicker("Tanggal Rencana Kembali *");
         tglKembaliPicker.setMin(LocalDate.now());
         tglKembaliPicker.setValue(LocalDate.now().plusDays(7));
         tglKembaliPicker.setWidthFull();
+        tglKembaliPicker.getStyle().set("margin-top", "4px");
 
         // Upload foto bukti
         String[] fotoNameArr = {null};
         Div uploadWrapper = new Div();
-        uploadWrapper.getStyle().set("margin-top", "14px");
+        uploadWrapper.getStyle()
+                .set("margin-top", "14px")
+                .set("width", "100%");
         Span uploadLabel = new Span("Upload Foto Bukti *");
-        uploadLabel.getStyle().set("font-size", "13px").set("font-weight", "700")
-                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "6px");
+        uploadLabel.getStyle()
+                .set("font-size", "13px").set("font-weight", "700")
+                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "6px")
+                .set("font-family", "'Inter', sans-serif");
 
         MemoryBuffer buffer = new MemoryBuffer();
         Upload upload = new Upload(buffer);
@@ -2000,7 +2013,7 @@ public class UserDashboardView extends Div {
         upload.setMaxFiles(1);
         upload.setMaxFileSize(10 * 1024 * 1024);
         upload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Bukti"));
-        upload.setDropLabel(new Span("JPG, PNG, or HEIC · Max 10MB"));
+        upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
         upload.setWidthFull();
         upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
 
@@ -2008,20 +2021,22 @@ public class UserDashboardView extends Div {
 
         formBody.add(infoBox, tglKembaliPicker, uploadWrapper);
 
-        // Footer
+        // Footer — equal width buttons, full text
         Div footer = new Div();
         footer.getStyle()
-                .set("display", "flex").set("gap", "10px").set("padding", "0 22px 20px")
-                .set("border-top", "1px solid #eef2ee").set("padding-top", "16px");
+                .set("display", "flex").set("gap", "10px")
+                .set("padding", "16px 22px 20px")
+                .set("border-top", "1px solid #eef2ee");
 
         Button cancelBtn = new Button("Batal", ev -> d.close());
         cancelBtn.getStyle()
                 .set("flex", "1").set("background", "#f0f4f0")
                 .set("color", "#4a6a4a").set("border", "none")
                 .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
-                .set("font-weight", "600");
+                .set("font-weight", "600").set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px");
 
-        Button submitBtn = new Button("📦  Pinjam Sekarang", ev -> {
+        Button submitBtn = new Button("📦 Pinjam Sekarang", ev -> {
             if (tglKembaliPicker.getValue() == null) {
                 err("Pilih tanggal rencana kembali!");
                 return;
@@ -2060,7 +2075,7 @@ public class UserDashboardView extends Div {
         submitBtn.getStyle()
                 .set("flex", "2").set("border", "none").set("border-radius", "10px")
                 .set("height", "44px").set("cursor", "pointer").set("font-weight", "800")
-                .set("font-size", "13px")
+                .set("font-size", "13px").set("font-family", "'Inter', sans-serif")
                 .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)").set("color", "white");
 
         footer.add(cancelBtn, submitBtn);

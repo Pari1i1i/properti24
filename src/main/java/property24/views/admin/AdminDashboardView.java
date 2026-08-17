@@ -181,7 +181,7 @@ public class AdminDashboardView extends HorizontalLayout {
         navApprove.add(navApproveBadge);
 
         // Booking counter badge on sidebar
-        int bookingCnt = bookingService.getAllActiveBookings().size();
+        int bookingCnt = (int) bookingService.getPendingBookingCount();
         navBookingBadge = new Span(String.valueOf(bookingCnt));
         navBookingBadge.getStyle()
                 .set("background", "#3a9898")
@@ -2411,7 +2411,7 @@ public class AdminDashboardView extends HorizontalLayout {
                         .set("flex", "1");
                 approveBtn.addClickListener(e -> {
                     bookingService.approveBooking(bk, currentUser);
-                    int activeCnt = bookingService.getAllActiveBookings().size();
+                    int activeCnt = (int) bookingService.getPendingBookingCount();
                     navBookingBadge.setText(String.valueOf(activeCnt));
                     navBookingBadge.getStyle().set("display", activeCnt > 0 ? "inline-block" : "none");
                     ok("✔ Booking atas nama " + uName + " berhasil disetujui!");
@@ -2457,7 +2457,7 @@ public class AdminDashboardView extends HorizontalLayout {
                             .set("cursor", "pointer").set("flex", "1");
                     confirmReject.addClickListener(ce -> {
                         bookingService.rejectBooking(bk, currentUser, catatanField.getValue());
-                        int activeCnt = bookingService.getAllActiveBookings().size();
+                        int activeCnt = (int) bookingService.getPendingBookingCount();
                         navBookingBadge.setText(String.valueOf(activeCnt));
                         navBookingBadge.getStyle().set("display", activeCnt > 0 ? "inline-block" : "none");
                         ok("Booking telah ditolak.");

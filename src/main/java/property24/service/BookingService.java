@@ -50,6 +50,13 @@ public class BookingService {
         return bookingRepository.findByStatusInOrderByIdDesc(ACTIVE_STATUSES);
     }
 
+    /** Returns count of bookings that still need admin approval (badge counter) */
+    public long getPendingBookingCount() {
+        return bookingRepository.findByStatusInOrderByIdDesc(
+                List.of(Booking.BookingStatus.menunggu_persetujuan)
+        ).size();
+    }
+
     public List<Booking> getAllBookings() {
         return bookingRepository.findAllByOrderByIdDesc();
     }
