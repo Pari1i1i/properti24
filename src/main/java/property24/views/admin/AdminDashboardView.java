@@ -2663,7 +2663,13 @@ public class AdminDashboardView extends HorizontalLayout {
             d.setModal(true);
             d.setWidth("min(460px, 92vw)");
 
-            VerticalLayout content = dialogLayout();
+            VerticalLayout content = new VerticalLayout();
+            content.getStyle()
+                    .set("background", "#ffffff")
+                    .set("border-radius", "16px")
+                    .set("padding", "20px");
+            content.setSpacing(false);
+            content.setPadding(false);
 
             Div hdr = new Div();
             Span hdrTitle = new Span("🔧 Laporkan Kerusakan Barang");
@@ -2673,7 +2679,7 @@ public class AdminDashboardView extends HorizontalLayout {
             Span hdrSub = new Span("Pilih barang dan deskripsikan kerusakannya.");
             hdrSub.getStyle()
                     .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
-                    .set("color", "#9a8a8a").set("margin-top", "4px").set("display", "block");
+                    .set("color", "#6a7a6a").set("margin-top", "4px").set("display", "block");
             hdr.add(hdrTitle, hdrSub);
 
             Hr hr = new Hr();
@@ -2701,7 +2707,13 @@ public class AdminDashboardView extends HorizontalLayout {
             Div btnRow = new Div();
             btnRow.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "16px");
 
-            Button cancel = dialogCancelBtn("Batal", d);
+            Button cancel = new Button("Batal", ce -> d.close());
+            cancel.getStyle()
+                    .set("background", "#f0f4f0").set("color", "#555")
+                    .set("font-weight", "600").set("font-family", "'Inter', sans-serif")
+                    .set("border", "none").set("border-radius", "8px")
+                    .set("height", "40px").set("cursor", "pointer");
+
             Button submit = new Button("Simpan Laporan");
             submit.getStyle()
                     .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)").set("color", "white")
@@ -2719,7 +2731,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 perbaikanService.laporKerusakan(
                         barangBox.getValue(), currentUser,
                         catatanField.getValue(), teknisiField.getValue(), biaya);
-                ok("Kerusakan berhasil dilaporkan.");
+                ok("Kerusakan berhasil dilaporkan. Status barang menjadi RUSAK.");
                 d.close();
                 refreshKerusakanCards(cardsContainer, "all");
                 for (Span s : tabBtns)
@@ -2835,7 +2847,13 @@ public class AdminDashboardView extends HorizontalLayout {
                     Dialog sd = new Dialog();
                     sd.setModal(true);
                     sd.setWidth("min(420px, 92vw)");
-                    VerticalLayout sc = dialogLayout();
+                    VerticalLayout sc = new VerticalLayout();
+                    sc.getStyle()
+                            .set("background", "#ffffff")
+                            .set("border-radius", "16px")
+                            .set("padding", "20px");
+                    sc.setSpacing(false);
+                    sc.setPadding(false);
 
                     Span sdTitle = new Span("Tandai Perbaikan Selesai");
                     sdTitle.getStyle()
@@ -2856,7 +2874,12 @@ public class AdminDashboardView extends HorizontalLayout {
 
                     Div sdBtns = new Div();
                     sdBtns.getStyle().set("display", "flex").set("gap", "10px").set("margin-top", "14px");
-                    Button sdCancel = dialogCancelBtn("Batal", sd);
+                    Button sdCancel = new Button("Batal", ce -> sd.close());
+                    sdCancel.getStyle()
+                            .set("background", "#f0f4f0").set("color", "#555")
+                            .set("font-weight", "600").set("font-family", "'Inter', sans-serif")
+                            .set("border", "none").set("border-radius", "8px")
+                            .set("height", "40px").set("cursor", "pointer");
                     Button sdConfirm = new Button("Konfirmasi Selesai");
                     sdConfirm.getStyle()
                             .set("background", "linear-gradient(135deg,#3a9898,#287373)").set("color", "white")

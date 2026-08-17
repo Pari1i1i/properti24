@@ -408,12 +408,15 @@ public class UserDashboardView extends Div {
             imgWrap.add(ic);
         }
 
-        boolean isBooked = bookingService.isBarangBooked(b);
-        boolean avail = b.getStatus() == Barang.Status.tersedia && !isBooked;
+        boolean isRusak = b.getStatus() == Barang.Status.rusak;
+        boolean isDiperbaiki = b.getStatus() == Barang.Status.diperbaiki;
         boolean borrowed = b.getStatus() == Barang.Status.dipinjam;
-        String badgeTxt = avail ? "AVAILABLE" : isBooked ? "DIBOOKING" : borrowed ? "BORROWED" : "RUSAK";
-        String badgeClr = avail ? "#2ed573" : isBooked ? "#ff9f43" : borrowed ? "#ff9f43" : "#ff5252";
-        String badgeBg  = avail ? "rgba(46,213,115,0.2)" : isBooked ? "rgba(255,159,67,0.2)" : borrowed ? "rgba(255,159,67,0.2)" : "rgba(255,82,82,0.2)";
+        boolean isBooked = b.getStatus() == Barang.Status.tersedia && bookingService.isBarangBooked(b);
+        boolean avail = b.getStatus() == Barang.Status.tersedia && !isBooked;
+
+        String badgeTxt = isRusak ? "RUSAK" : isDiperbaiki ? "DIPERBAIKI" : borrowed ? "BORROWED" : isBooked ? "DIBOOKING" : "AVAILABLE";
+        String badgeClr = isRusak ? "#ff5252" : isDiperbaiki ? "#e07a2a" : borrowed ? "#ff9f43" : isBooked ? "#e07a2a" : "#2ed573";
+        String badgeBg  = isRusak ? "rgba(255,82,82,0.2)" : isDiperbaiki ? "rgba(224,122,42,0.2)" : borrowed ? "rgba(255,159,67,0.2)" : isBooked ? "rgba(224,122,42,0.2)" : "rgba(46,213,115,0.2)";
 
         Div badge = new Div();
         badge.setText(badgeTxt);
@@ -541,7 +544,10 @@ public class UserDashboardView extends Div {
                 .set("color", "#b8c9bf").set("border", "1px solid rgba(255,255,255,0.15)")
                 .set("border-radius", "10px").set("height", "42px").set("cursor", "pointer");
 
-        boolean isBooked = bookingService.isBarangBooked(b);
+        boolean isRusak = b.getStatus() == Barang.Status.rusak;
+        boolean isDiperbaiki = b.getStatus() == Barang.Status.diperbaiki;
+        boolean isDipinjam = b.getStatus() == Barang.Status.dipinjam;
+        boolean isBooked = b.getStatus() == Barang.Status.tersedia && bookingService.isBarangBooked(b);
         boolean canBorrow = b.getStatus() == Barang.Status.tersedia && !isBooked;
 
         if (canBorrow) {
@@ -570,14 +576,18 @@ public class UserDashboardView extends Div {
 
             footer.add(closeBtn, bookingBtn, borrowBtn);
         } else {
-            String textBtn = isBooked ? "Sedang Dibooking" : "Tidak Tersedia";
+            String textBtn = isRusak ? "Barang Rusak" :
+                             isDiperbaiki ? "Sedang Diperbaiki" :
+                             isDipinjam ? "Sedang Dipinjam" :
+                             isBooked ? "Sedang Dibooking" : "Tidak Tersedia";
             Button disabledBtn = new Button(textBtn);
             disabledBtn.setEnabled(false);
             disabledBtn.getStyle()
                     .set("flex", "2").set("border", "none").set("border-radius", "10px")
                     .set("height", "42px").set("cursor", "default")
                     .set("font-weight", "700").set("font-size", "13px")
-                    .set("background", "#555").set("color", "white");
+                    .set("background", isRusak ? "#c62828" : isDiperbaiki ? "#e07a2a" : "#555")
+                    .set("color", "white");
 
             footer.add(closeBtn, disabledBtn);
         }

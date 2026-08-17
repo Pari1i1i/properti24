@@ -12,6 +12,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findFirstByBarangIdAndStatusIn(Long barangId, Collection<Booking.BookingStatus> statuses);
 
+    List<Booking> findByBarangIdAndStatusIn(Long barangId, Collection<Booking.BookingStatus> statuses);
+
     boolean existsByBarangIdAndStatusIn(Long barangId, Collection<Booking.BookingStatus> statuses);
 
     boolean existsByUserIdAndBarangIdAndStatusIn(Long userId, Long barangId, Collection<Booking.BookingStatus> statuses);

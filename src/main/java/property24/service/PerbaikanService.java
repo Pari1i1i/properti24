@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import property24.entity.Barang;
+import property24.entity.Booking;
 import property24.entity.RiwayatPerbaikan;
 import property24.entity.User;
 import property24.repository.BarangRepository;
+import property24.repository.BookingRepository;
 import property24.repository.RiwayatPerbaikanRepository;
 
 import java.math.BigDecimal;
@@ -19,6 +21,7 @@ public class PerbaikanService {
 
     private final RiwayatPerbaikanRepository perbaikanRepository;
     private final BarangRepository barangRepository;
+    private final BookingRepository bookingRepository;
 
     // ── READ ─────────────────────────────────────────────────────────────────
 
@@ -38,7 +41,8 @@ public class PerbaikanService {
     // ── WRITE ─────────────────────────────────────────────────────────────────
 
     /**
-     * Catat kerusakan baru. Otomatis ubah status barang jadi 'rusak'.
+     * Catat kerusakan baru. Otomatis ubah status barang jadi 'rusak'
+     * dan batalkan booking aktif jika ada.
      */
     @Transactional
     public RiwayatPerbaikan laporKerusakan(Barang barang, User dilaporkanOleh,
@@ -55,6 +59,17 @@ public class PerbaikanService {
         // Tandai barang sebagai rusak
         barang.setStatus(Barang.Status.rusak);
         barangRepository.save(barang);
+
+        // Batalkan booking aktif jika ada
+        List<Booking> activeBookings = bookingRepository.findByBarangIdAndStatusIn(
+                barang.getId(), BookingService.ACTIVE_STATUSES
+        );
+        for (Booking bk : activeBookings) {
+            bk.setStatus(Booking.BookingStatus.dibatalkan);
+            String existingCatatan = bk.getCatatan() != null ? bk.getCatatan() : "";
+            bk.setCatatan((existingCatatan + " [Dibatalkan otomatis: Barang dalam perbaikan]").trim());
+            bookingRepository.save(bk);
+        }
 
         return perbaikanRepository.save(rp);
     }
