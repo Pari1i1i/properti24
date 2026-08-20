@@ -39,7 +39,6 @@ public class ForgotPasswordView extends HorizontalLayout {
 
     // Form inputs
     private EmailField emailField;
-    private TextField otpField;
     private PasswordField newPasswordField;
     private PasswordField confirmPasswordField;
 
@@ -52,9 +51,15 @@ public class ForgotPasswordView extends HorizontalLayout {
         setSizeFull();
         setSpacing(false);
         setPadding(false);
-        getStyle().set("overflow", "hidden");
+        getStyle()
+                .set("overflow", "auto")
+                .set("flex-wrap", "wrap");
 
-        add(buildLeftPanel(), buildRightPanel());
+        Div leftPanel  = buildLeftPanel();
+        Div rightPanel = buildRightPanel();
+        leftPanel.addClassName("fp-left-panel");
+        rightPanel.addClassName("fp-right-panel");
+        add(leftPanel, rightPanel);
 
         addAttachListener(e -> {
             UI.getCurrent().getPage().addStyleSheet(
@@ -81,7 +86,7 @@ public class ForgotPasswordView extends HorizontalLayout {
         panel.add(mkBubble("60px",  "rgba(143,176,138,0.20)", "12%", null, null, "78%"));
         panel.add(mkBubble("45px",  "rgba(143,176,138,0.18)", "78%", null, null, "6%"));
 
-        Image logoImg = new Image("/images/logo.png", "Property 24 Logo");
+        Image logoImg = new Image("images/logo.png", "Property 24 Logo");
         logoImg.setWidth("280px");
         logoImg.getStyle().set("position", "relative").set("z-index", "1");
         panel.add(logoImg);
@@ -98,14 +103,18 @@ public class ForgotPasswordView extends HorizontalLayout {
                 .set("justify-content", "center")
                 .set("position", "relative")
                 .set("overflow", "hidden")
-                .set("min-height", "100vh");
+                .set("min-height", "100vh")
+                .set("padding", "32px 0");
 
         panel.add(mkBubble("500px", "rgba(143,176,138,0.04)", "-200px", null, null, "-200px"));
         panel.add(mkBubble("300px", "rgba(143,176,138,0.05)", null, "-100px", "-100px", null));
 
         formBox = new Div();
+        formBox.addClassName("fp-formbox");
         formBox.getStyle()
-                .set("width", "390px")
+                .set("width", "100%")
+                .set("max-width", "380px")
+                .set("padding", "0 24px")
                 .set("position", "relative")
                 .set("z-index", "1");
 
@@ -162,7 +171,7 @@ public class ForgotPasswordView extends HorizontalLayout {
         footer.getStyle()
                 .set("text-align", "center")
                 .set("margin-top", "24px");
-        Anchor loginLink = new Anchor("login", "\u2190 Kembali ke Halaman Login");
+        Anchor loginLink = new Anchor("login", "← Kembali ke Halaman Login");
         loginLink.getStyle()
                 .set("color", "#8fb08a")
                 .set("font-family", "'Inter', sans-serif")
@@ -187,8 +196,10 @@ public class ForgotPasswordView extends HorizontalLayout {
         emailField.setWidthFull();
         styleDarkField(emailField);
         emailField.setPrefixComponent(svgIcon(ICON_EMAIL));
+        emailField.getElement().setAttribute("autocomplete", "off");
+        emailField.getElement().setAttribute("name", "fp-email");
 
-        Button sendOtpBtn = mkButton("KIRIM KODE OTP  \u2192");
+        Button sendOtpBtn = mkButton("KIRIM KODE OTP  →");
         sendOtpBtn.addClickListener(e -> handleSendOtp());
         emailField.addKeyPressListener(Key.ENTER, e -> handleSendOtp());
 
@@ -201,26 +212,38 @@ public class ForgotPasswordView extends HorizontalLayout {
 
         Div infoBox = new Div();
         infoBox.getStyle()
-                .set("background", "rgba(143,176,138,0.1)")
+                .set("background", "rgba(143,176,138,0.12)")
                 .set("border-left", "3px solid #8fb08a")
-                .set("padding", "10px 14px")
-                .set("border-radius", "6px")
+                .set("padding", "12px 14px")
+                .set("border-radius", "8px")
                 .set("margin-bottom", "18px")
                 .set("color", "#b8c9bf")
-                .set("font-size", "12px");
-        infoBox.setText("Kode 6-digit OTP telah dikirimkan ke email Anda. Periksa kotak masuk / spam Gmail.");
+                .set("font-size", "12px")
+                .set("line-height", "1.5");
+        infoBox.setText("Kode 6-digit OTP telah dikirimkan ke email Anda. Periksa kotak masuk atau folder spam Gmail.");
 
-        Div oLabel = fLabel("KODE OTP (6 DIGIT)");
-        otpField = new TextField();
-        otpField.setPlaceholder("123456");
-        otpField.setMaxLength(6);
-        otpField.setWidthFull();
-        otpField.getStyle().set("text-align", "center").set("letter-spacing", "6px").set("font-size", "18px");
-        styleDarkField(otpField);
+        Div oLabel = fLabel("MASUKKAN 6-DIGIT KODE OTP");
+        oLabel.getStyle().set("margin-bottom", "10px");
 
-        Button verifyBtn = mkButton("VERIFIKASI OTP  \u2192");
+        // Android-styled 6-digit OTP container
+        Div otpContainer = new Div();
+        otpContainer.addClassName("android-otp-container");
+        otpContainer.getStyle()
+                .set("display", "flex")
+                .set("justify-content", "space-between")
+                .set("gap", "8px")
+                .set("margin-bottom", "18px");
+
+        for (int i = 1; i <= 6; i++) {
+            Div digitBox = new Div();
+            digitBox.getElement().setProperty("innerHTML",
+                    "<input type='tel' maxlength='1' class='android-otp-digit' id='otp-digit-" + i + "' " +
+                    "data-index='" + i + "' inputmode='numeric' pattern='[0-9]*' autocomplete='one-time-code' />");
+            otpContainer.add(digitBox);
+        }
+
+        Button verifyBtn = mkButton("VERIFIKASI OTP  →");
         verifyBtn.addClickListener(e -> handleVerifyOtp());
-        otpField.addKeyPressListener(Key.ENTER, e -> handleVerifyOtp());
 
         Button resendBtn = new Button("Kirim Ulang OTP");
         resendBtn.setWidthFull();
@@ -229,12 +252,15 @@ public class ForgotPasswordView extends HorizontalLayout {
                 .set("color", "#8fb08a")
                 .set("border", "1px solid rgba(143,176,138,0.4)")
                 .set("border-radius", "8px")
-                .set("height", "42px")
+                .set("height", "44px")
                 .set("margin-top", "10px")
-                .set("cursor", "pointer");
+                .set("cursor", "pointer")
+                .set("font-weight", "600")
+                .set("font-family", "'Inter', sans-serif")
+                .set("font-size", "13px");
         resendBtn.addClickListener(e -> handleSendOtp());
 
-        step2Container.add(infoBox, oLabel, otpField, verifyBtn, resendBtn);
+        step2Container.add(infoBox, oLabel, otpContainer, verifyBtn, resendBtn);
     }
 
     private void buildStep3() {
@@ -247,6 +273,7 @@ public class ForgotPasswordView extends HorizontalLayout {
         newPasswordField.setWidthFull();
         styleDarkField(newPasswordField);
         newPasswordField.setPrefixComponent(svgIcon(ICON_LOCK));
+        newPasswordField.getElement().setAttribute("autocomplete", "new-password");
 
         Div cpLabel = fLabel("KONFIRMASI PASSWORD BARU");
         cpLabel.getStyle().set("margin-top", "14px");
@@ -255,9 +282,11 @@ public class ForgotPasswordView extends HorizontalLayout {
         confirmPasswordField.setWidthFull();
         styleDarkField(confirmPasswordField);
         confirmPasswordField.setPrefixComponent(svgIcon(ICON_LOCK));
+        confirmPasswordField.getElement().setAttribute("autocomplete", "new-password");
 
-        Button resetBtn = mkButton("SIMPAN PASSWORD BARU  \u2192");
+        Button resetBtn = mkButton("SIMPAN PASSWORD BARU  →");
         resetBtn.addClickListener(e -> handleResetPassword());
+        confirmPasswordField.addKeyPressListener(Key.ENTER, e -> handleResetPassword());
 
         step3Container.add(npLabel, newPasswordField, cpLabel, confirmPasswordField, resetBtn);
     }
@@ -299,6 +328,41 @@ public class ForgotPasswordView extends HorizontalLayout {
         step2Container.getStyle().set("display", step == 2 ? "block" : "none");
         step3Container.getStyle().set("display", step == 3 ? "block" : "none");
         successContainer.getStyle().set("display", step == 4 ? "block" : "none");
+
+        if (step == 2) {
+            // Attach Android OTP auto-advance & auto-focus script
+            String otpInitJs =
+                    "setTimeout(() => {" +
+                    "  const inputs = document.querySelectorAll('.android-otp-digit');" +
+                    "  if (inputs.length > 0) {" +
+                    "    inputs[0].focus();" +
+                    "    inputs.forEach((input, index) => {" +
+                    "      input.oninput = (e) => {" +
+                    "        const val = e.target.value;" +
+                    "        if (val.length === 1 && index < inputs.length - 1) {" +
+                    "          inputs[index + 1].focus();" +
+                    "        }" +
+                    "      };" +
+                    "      input.onkeydown = (e) => {" +
+                    "        if (e.key === 'Backspace' && !e.target.value && index > 0) {" +
+                    "          inputs[index - 1].focus();" +
+                    "        }" +
+                    "      };" +
+                    "      input.onpaste = (e) => {" +
+                    "        e.preventDefault();" +
+                    "        const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();" +
+                    "        if (/^\\d{6}$/.test(pasteData)) {" +
+                    "          pasteData.split('').forEach((digit, i) => {" +
+                    "            if (inputs[i]) inputs[i].value = digit;" +
+                    "          });" +
+                    "          inputs[inputs.length - 1].focus();" +
+                    "        }" +
+                    "      };" +
+                    "    });" +
+                    "  }" +
+                    "}, 150);";
+            UI.getCurrent().getPage().executeJs(otpInitJs);
+        }
     }
 
     private void handleSendOtp() {
@@ -321,25 +385,31 @@ public class ForgotPasswordView extends HorizontalLayout {
     }
 
     private void handleVerifyOtp() {
-        String otp = otpField.getValue() != null ? otpField.getValue().trim() : "";
-        if (otp.isEmpty() || otp.length() < 6) {
-            err("Masukkan 6-digit kode OTP!");
-            return;
-        }
+        String getOtpJs =
+                "let otp = '';" +
+                "document.querySelectorAll('.android-otp-digit').forEach(inp => otp += (inp.value || ''));" +
+                "return otp;";
 
-        boolean valid = passwordResetService.verifyOtp(currentEmail, otp);
-        if (valid) {
-            success("Kode OTP valid! Silakan masukkan password baru Anda.");
-            showStep(3);
-        } else {
-            err("Kode OTP salah atau sudah kedaluwarsa.");
-        }
+        UI.getCurrent().getPage().executeJs(getOtpJs).then(String.class, otp -> {
+            String cleanOtp = otp != null ? otp.trim() : "";
+            if (cleanOtp.length() < 6) {
+                err("Masukkan lengkap 6 digit kode OTP!");
+                return;
+            }
+
+            boolean valid = passwordResetService.verifyOtp(currentEmail, cleanOtp);
+            if (valid) {
+                success("Kode OTP valid! Silakan masukkan password baru Anda.");
+                showStep(3);
+            } else {
+                err("Kode OTP salah atau sudah kedaluwarsa.");
+            }
+        });
     }
 
     private void handleResetPassword() {
         String np = newPasswordField.getValue() != null ? newPasswordField.getValue() : "";
         String cp = confirmPasswordField.getValue() != null ? confirmPasswordField.getValue() : "";
-        String otp = otpField.getValue() != null ? otpField.getValue().trim() : "";
 
         if (np.length() < 6) {
             err("Password baru minimal harus 6 karakter!");
@@ -350,12 +420,20 @@ public class ForgotPasswordView extends HorizontalLayout {
             return;
         }
 
-        try {
-            passwordResetService.resetPassword(currentEmail, otp, np);
-            showStep(4);
-        } catch (Exception e) {
-            err(e.getMessage());
-        }
+        String getOtpJs =
+                "let otp = '';" +
+                "document.querySelectorAll('.android-otp-digit').forEach(inp => otp += (inp.value || ''));" +
+                "return otp;";
+
+        UI.getCurrent().getPage().executeJs(getOtpJs).then(String.class, otp -> {
+            String cleanOtp = otp != null ? otp.trim() : "";
+            try {
+                passwordResetService.resetPassword(currentEmail, cleanOtp, np);
+                showStep(4);
+            } catch (Exception e) {
+                err(e.getMessage());
+            }
+        });
     }
 
     private Button mkButton(String text) {
@@ -369,7 +447,7 @@ public class ForgotPasswordView extends HorizontalLayout {
                 .set("font-size", "13px")
                 .set("letter-spacing", "2px")
                 .set("border", "none")
-                .set("border-radius", "8px")
+                .set("border-radius", "10px")
                 .set("height", "50px")
                 .set("cursor", "pointer")
                 .set("margin-top", "18px")
@@ -391,14 +469,19 @@ public class ForgotPasswordView extends HorizontalLayout {
         return d;
     }
 
-    private void styleDarkField(com.vaadin.flow.component.HasStyle field) {
-        field.getStyle()
-                .set("background", "rgba(10,31,15,0.7)")
-                .set("border", "1px solid rgba(143,176,138,0.3)")
-                .set("border-radius", "8px")
-                .set("color", "white")
-                .set("font-family", "'Inter', sans-serif")
-                .set("font-size", "13px");
+    private void styleDarkField(com.vaadin.flow.component.Component field) {
+        field.getElement().getStyle()
+                .set("--lumo-body-text-color", "white")
+                .set("--lumo-primary-color", "#8fb08a")
+                .set("--lumo-primary-text-color", "#8fb08a")
+                .set("--lumo-base-color", "#1c3b2e")
+                .set("--lumo-contrast-5pct", "rgba(255,255,255,0.07)")
+                .set("--lumo-contrast-10pct", "rgba(143,176,138,0.3)")
+                .set("--vaadin-input-field-background", "rgba(255,255,255,0.07)")
+                .set("--vaadin-input-field-border-color", "rgba(143,176,138,0.32)")
+                .set("--vaadin-input-field-value-color", "white")
+                .set("--vaadin-input-field-placeholder-color", "rgba(184,201,191,0.45)")
+                .set("--vaadin-input-field-focused-border-color", "#8fb08a");
     }
 
     private Div mkBubble(String size, String bg, String top, String left, String bottom, String right) {
@@ -430,24 +513,98 @@ public class ForgotPasswordView extends HorizontalLayout {
     }
 
     private void injectGlobalCss() {
+        String css =
+                "body,html{margin:0;padding:0;}" +
+                ".android-otp-digit {" +
+                "  width: 44px;" +
+                "  height: 52px;" +
+                "  background: rgba(255, 255, 255, 0.08);" +
+                "  border: 2px solid rgba(143, 176, 138, 0.35);" +
+                "  border-radius: 12px;" +
+                "  color: #ffffff;" +
+                "  font-family: 'Inter', monospace, sans-serif;" +
+                "  font-size: 22px;" +
+                "  font-weight: 800;" +
+                "  text-align: center;" +
+                "  outline: none;" +
+                "  transition: all 0.2s ease;" +
+                "  box-sizing: border-box;" +
+                "}" +
+                ".android-otp-digit:focus {" +
+                "  border-color: #8fb08a !important;" +
+                "  background: rgba(255, 255, 255, 0.14) !important;" +
+                "  box-shadow: 0 0 12px rgba(143, 176, 138, 0.45) !important;" +
+                "  transform: translateY(-2px);" +
+                "}" +
+                /* Fix browser autofill override */
+                ".fp-formbox input:-webkit-autofill," +
+                ".fp-formbox input:-webkit-autofill:hover," +
+                ".fp-formbox input:-webkit-autofill:focus," +
+                ".fp-formbox input:-webkit-autofill:active {" +
+                "  -webkit-box-shadow: 0 0 0 40px #1c3b2e inset !important;" +
+                "  -webkit-text-fill-color: white !important;" +
+                "  caret-color: white !important;" +
+                "}" +
+                /* Mobile / Android Stacked Layout (Top Logo Banner + Bottom Curved Card) */
+                "@media(max-width: 768px) {" +
+                "  vaadin-horizontal-layout, .fp-left-panel, .fp-right-panel { box-sizing: border-box !important; }" +
+                "  .fp-left-panel {" +
+                "    order: 1 !important;" +
+                "    display: flex !important;" +
+                "    flex: none !important;" +
+                "    width: 100% !important;" +
+                "    height: 210px !important;" +
+                "    min-height: 210px !important;" +
+                "    max-height: 210px !important;" +
+                "    background: #f4f8f5 !important;" +
+                "    align-items: center !important;" +
+                "    justify-content: center !important;" +
+                "    position: relative !important;" +
+                "    overflow: hidden !important;" +
+                "  }" +
+                "  .fp-left-panel img {" +
+                "    width: 220px !important;" +
+                "    max-width: 75% !important;" +
+                "    height: auto !important;" +
+                "  }" +
+                "  .fp-right-panel {" +
+                "    order: 2 !important;" +
+                "    flex: 1 1 auto !important;" +
+                "    width: 100% !important;" +
+                "    min-width: 100% !important;" +
+                "    max-width: 100% !important;" +
+                "    min-height: calc(100vh - 190px) !important;" +
+                "    background: #1c3b2e !important;" +
+                "    border-radius: 32px 32px 0 0 !important;" +
+                "    margin-top: -24px !important;" +
+                "    padding: 32px 20px 48px !important;" +
+                "    box-sizing: border-box !important;" +
+                "    position: relative !important;" +
+                "    z-index: 2 !important;" +
+                "    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2) !important;" +
+                "    align-items: flex-start !important;" +
+                "  }" +
+                "  .fp-formbox {" +
+                "    width: 100% !important;" +
+                "    max-width: 400px !important;" +
+                "    padding: 0 !important;" +
+                "    margin: 0 auto !important;" +
+                "  }" +
+                "  .android-otp-digit {" +
+                "    width: calc((100vw - 72px) / 6);" +
+                "    max-width: 48px;" +
+                "    height: 52px;" +
+                "    font-size: 20px;" +
+                "  }" +
+                "}";
+
         UI.getCurrent().getPage().executeJs(
-                "if (!document.getElementById('fp-global-styles')) {" +
-                "  var style = document.createElement('style');" +
-                "  style.id = 'fp-global-styles';" +
-                "  style.innerHTML = `" +
-                "    vaadin-text-field::part(input-field), vaadin-password-field::part(input-field), vaadin-email-field::part(input-field) {" +
-                "      background-color: transparent !important;" +
-                "      border: none !important;" +
-                "    }" +
-                "    vaadin-text-field input, vaadin-password-field input, vaadin-email-field input {" +
-                "      color: #ffffff !important;" +
-                "      font-family: 'Inter', sans-serif !important;" +
-                "      font-size: 13px !important;" +
-                "    }" +
-                "  `;" +
-                "  document.head.appendChild(style);" +
-                "}"
-        );
+                "if (!document.getElementById('p24-fp-css')) {" +
+                "  const s = document.createElement('style');" +
+                "  s.id = 'p24-fp-css';" +
+                "  s.textContent = $0;" +
+                "  document.head.appendChild(s);" +
+                "}", css);
     }
 
     private void err(String msg) {

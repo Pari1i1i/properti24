@@ -404,11 +404,51 @@ public class LoginView extends HorizontalLayout {
             "  -webkit-text-fill-color:white!important;" +
             "  caret-color:white!important;" +
             "}" +
-            /* Mobile: hide the logo left panel, show only the dark form panel stacked */
-            "@media(max-width:700px){" +
-            "  .login-left-panel{min-height:220px!important;flex:none!important;width:100%!important;}" +
-            "  .login-right-panel{min-height:unset!important;flex:none!important;width:100%!important;padding:28px 0 40px!important;}" +
-            "  .login-formbox{max-width:100%!important;}" +
+            /* Mobile / Android Stacked Layout (Top Logo Banner + Bottom Curved Card) */
+            "@media(max-width: 768px){" +
+            "  vaadin-horizontal-layout, .login-left-panel, .login-right-panel { box-sizing: border-box !important; }" +
+            "  .login-left-panel{" +
+            "    order: 1 !important;" +
+            "    display: flex !important;" +
+            "    flex: none !important;" +
+            "    width: 100% !important;" +
+            "    height: 210px !important;" +
+            "    min-height: 210px !important;" +
+            "    max-height: 210px !important;" +
+            "    background: #f4f8f5 !important;" +
+            "    align-items: center !important;" +
+            "    justify-content: center !important;" +
+            "    position: relative !important;" +
+            "    overflow: hidden !important;" +
+            "  }" +
+            "  .login-left-panel img {" +
+            "    width: 220px !important;" +
+            "    max-width: 75% !important;" +
+            "    height: auto !important;" +
+            "  }" +
+            "  .login-right-panel{" +
+            "    order: 2 !important;" +
+            "    flex: 1 1 auto !important;" +
+            "    width: 100% !important;" +
+            "    min-width: 100% !important;" +
+            "    max-width: 100% !important;" +
+            "    min-height: calc(100vh - 190px) !important;" +
+            "    background: #1c3b2e !important;" +
+            "    border-radius: 32px 32px 0 0 !important;" +
+            "    margin-top: -24px !important;" +
+            "    padding: 32px 20px 48px !important;" +
+            "    box-sizing: border-box !important;" +
+            "    position: relative !important;" +
+            "    z-index: 2 !important;" +
+            "    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2) !important;" +
+            "    align-items: flex-start !important;" +
+            "  }" +
+            "  .login-formbox{" +
+            "    width: 100% !important;" +
+            "    max-width: 400px !important;" +
+            "    padding: 0 !important;" +
+            "    margin: 0 auto !important;" +
+            "  }" +
             "}";
         getElement().executeJs(
             "if(!document.getElementById('p24-login-css')){" +

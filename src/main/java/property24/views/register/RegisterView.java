@@ -13,7 +13,6 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -29,19 +28,22 @@ import property24.service.UserService;
 @CssImport(value = "./views/register/register-view.css", themeFor = "vaadin-text-field")
 @CssImport(value = "./views/register/register-view.css", themeFor = "vaadin-password-field")
 @CssImport(value = "./views/register/register-view.css", themeFor = "vaadin-email-field")
-public class RegisterView extends HorizontalLayout {
+public class RegisterView extends Div {
 
     private final UserService userService;
 
     public RegisterView(UserService userService) {
         this.userService = userService;
 
-        setSizeFull();
-        setSpacing(false);
-        setPadding(false);
+        // Set root Div as full-screen flex row container
+        addClassName("register-view-layout");
         getStyle()
+                .set("display", "flex")
+                .set("flex-direction", "row")
+                .set("width", "100%")
+                .set("min-height", "100vh")
                 .set("overflow", "auto")
-                .set("flex-wrap", "wrap");
+                .set("box-sizing", "border-box");
 
         Div leftPanel  = buildLeftPanel();
         Div rightPanel = buildRightPanel();
@@ -228,7 +230,7 @@ public class RegisterView extends HorizontalLayout {
                 .set("background", "linear-gradient(135deg, #4d8f4d 0%, #8fb08a 100%)")
                 .set("color", "#0a1f0f").set("font-family", "'Inter', sans-serif")
                 .set("font-weight", "700").set("font-size", "12px").set("letter-spacing", "2px")
-                .set("border", "none").set("border-radius", "8px").set("height", "50px")
+                .set("border", "none").set("border-radius", "25px").set("height", "50px")
                 .set("cursor", "pointer").set("margin-top", "16px").set("transition", "all 0.3s ease")
                 .set("box-shadow", "0 4px 15px rgba(78,143,78,0.25)");
         regBtn.addClickListener(e -> onRegister(
@@ -568,10 +570,67 @@ public class RegisterView extends HorizontalLayout {
             "  padding: 24px!important;" +
             "  border-radius: 18px!important;" +
             "}" +
-            "@media(max-width:700px){" +
-            "  .reg-left-panel{order:2!important;min-height:unset!important;flex:none!important;width:100%!important;padding:28px 0 40px!important;}" +
-            "  .reg-right-panel{order:1!important;min-height:200px!important;flex:none!important;width:100%!important;}" +
-            "  .reg-formbox{max-width:100%!important;}" +
+            /* Fix browser autofill */
+            ".reg-formbox input:-webkit-autofill," +
+            ".reg-formbox input:-webkit-autofill:hover," +
+            ".reg-formbox input:-webkit-autofill:focus," +
+            ".reg-formbox input:-webkit-autofill:active {" +
+            "  -webkit-box-shadow: 0 0 0 40px #1c3b2e inset !important;" +
+            "  -webkit-text-fill-color: white !important;" +
+            "  caret-color: white !important;" +
+            "}" +
+            /* Mobile / Android Stacked Layout (Top Logo Banner + Bottom Curved Card) */
+            "@media(max-width: 768px){" +
+            "  .register-view-layout {" +
+            "    flex-direction: column !important;" +
+            "    overflow-x: hidden !important;" +
+            "  }" +
+            "  .reg-right-panel{" +
+            "    order: 1 !important;" +
+            "    display: flex !important;" +
+            "    flex: none !important;" +
+            "    width: 100% !important;" +
+            "    min-width: 0 !important;" +
+            "    max-width: 100% !important;" +
+            "    height: 210px !important;" +
+            "    min-height: 210px !important;" +
+            "    max-height: 210px !important;" +
+            "    background: #f4f8f5 !important;" +
+            "    align-items: center !important;" +
+            "    justify-content: center !important;" +
+            "    position: relative !important;" +
+            "    overflow: hidden !important;" +
+            "  }" +
+            "  .reg-right-panel img {" +
+            "    width: 220px !important;" +
+            "    max-width: 75% !important;" +
+            "    height: auto !important;" +
+            "  }" +
+            "  .reg-left-panel{" +
+            "    order: 2 !important;" +
+            "    display: flex !important;" +
+            "    flex: 1 1 auto !important;" +
+            "    width: 100% !important;" +
+            "    min-width: 0 !important;" +
+            "    max-width: 100% !important;" +
+            "    min-height: calc(100vh - 190px) !important;" +
+            "    background: #1c3b2e !important;" +
+            "    border-radius: 32px 32px 0 0 !important;" +
+            "    margin-top: -24px !important;" +
+            "    padding: 32px 20px 48px !important;" +
+            "    box-sizing: border-box !important;" +
+            "    position: relative !important;" +
+            "    z-index: 2 !important;" +
+            "    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2) !important;" +
+            "    align-items: flex-start !important;" +
+            "    justify-content: center !important;" +
+            "  }" +
+            "  .reg-formbox{" +
+            "    width: 100% !important;" +
+            "    max-width: 400px !important;" +
+            "    padding: 0 !important;" +
+            "    margin: 0 auto !important;" +
+            "  }" +
             "}";
         getElement().executeJs(
             "if(!document.getElementById('p24-reg-css')){" +
