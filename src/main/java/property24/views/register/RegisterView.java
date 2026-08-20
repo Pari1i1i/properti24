@@ -279,7 +279,7 @@ public class RegisterView extends HorizontalLayout {
         panel.add(mkBubble("30px",  "rgba(28,59,46,0.10)",   null, "40%", null, "2%"));
         panel.add(mkBubble("22px",  "rgba(28,59,46,0.09)",   null, "55%", null, "90%"));
 
-        Image logoImg = new Image("images/logo.png", "Property 24 Logo");
+        Image logoImg = new Image("/images/logo.png", "Property 24 Logo");
         logoImg.setWidth("280px");
         logoImg.getStyle().set("position", "relative").set("z-index", "1");
         panel.add(logoImg);

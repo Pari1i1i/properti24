@@ -397,7 +397,7 @@ public class UserDashboardView extends Div {
                 .set("overflow", "hidden");
 
         if (b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             imgWrap.add(img);
         } else {
@@ -508,7 +508,7 @@ public class UserDashboardView extends Div {
                 .set("align-items", "center").set("justify-content", "center")
                 .set("margin-bottom", "14px");
         if (b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             img.getStyle().set("width", "100%").set("height", "auto").set("max-height", "200px").set("object-fit", "contain");
             photoWrap.add(img);
         } else {
@@ -676,7 +676,7 @@ public class UserDashboardView extends Div {
                         .set("border-radius", "8px").set("overflow", "hidden")
                         .set("flex-shrink", "0").set("background", "#e0eae0");
                 if (item.getFotoBarang() != null && !item.getFotoBarang().isBlank()) {
-                    Image img = new Image("images/" + item.getFotoBarang().trim(), item.getNamaBarang());
+                    Image img = new Image("/images/" + item.getFotoBarang().trim(), item.getNamaBarang());
                     img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
                     thumb.add(img);
                 }
@@ -1078,7 +1078,7 @@ public class UserDashboardView extends Div {
                 .set("background", "#e8f0ea").set("display", "flex")
                 .set("align-items", "center").set("justify-content", "center");
         if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             thumb.add(img);
         }
@@ -1301,7 +1301,7 @@ public class UserDashboardView extends Div {
                 .set("border-radius", "10px").set("overflow", "hidden")
                 .set("background", "#e8f0ea");
         if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             thumb.add(img);
         }
@@ -1471,7 +1471,7 @@ public class UserDashboardView extends Div {
                 .set("border-radius", "10px").set("overflow", "hidden")
                 .set("background", "#e8f0ea");
         if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             thumb.add(img);
         }

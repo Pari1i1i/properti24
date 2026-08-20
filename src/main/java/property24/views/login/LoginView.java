@@ -94,7 +94,7 @@ public class LoginView extends HorizontalLayout {
                 "-150px", "-150px"));
 
         // ── Center Content ───────────────────────────────────────────────
-        Image logoImg = new Image("images/logo.png", "Property 24 Logo");
+        Image logoImg = new Image("/images/logo.png", "Property 24 Logo");
         logoImg.setWidth("280px");
         logoImg.getStyle()
                 .set("position", "relative")

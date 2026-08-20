@@ -130,7 +130,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("gap", "10px");
 
         // Use actual logo image
-        Image logoImg = new Image("images/logo.png", "Property 24");
+        Image logoImg = new Image("/images/logo.png", "Property 24");
         logoImg.setWidth("38px");
         logoImg.setHeight("38px");
         logoImg.getStyle()
@@ -823,7 +823,7 @@ public class AdminDashboardView extends HorizontalLayout {
 
         String fotoName = barang.getFotoBarang();
         if (fotoName != null && !fotoName.trim().isEmpty()) {
-            Image assetImg = new Image("images/" + fotoName.trim(), barang.getNamaBarang());
+            Image assetImg = new Image("/images/" + fotoName.trim(), barang.getNamaBarang());
             assetImg.getStyle()
                     .set("width", "100%")
                     .set("height", "100%")
@@ -1127,7 +1127,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("box-shadow", "0 8px 24px rgba(0,0,0,0.25)");
 
         if (b.getFotoBarang() != null && !b.getFotoBarang().trim().isEmpty()) {
-            Image heroImg = new Image("images/" + b.getFotoBarang().trim(), b.getNamaBarang());
+            Image heroImg = new Image("/images/" + b.getFotoBarang().trim(), b.getNamaBarang());
             heroImg.getStyle()
                     .set("width", "100%")
                     .set("height", "auto")
@@ -1481,7 +1481,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("object-fit", "cover");
 
         if (!initialFoto.isEmpty()) {
-            photoPreview.setSrc("images/" + initialFoto);
+            photoPreview.setSrc("/images/" + initialFoto);
             previewWrap.add(photoPreview);
         } else {
             Span noImg = new Span("Pratinjau Foto Aset");
@@ -2317,7 +2317,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("background", "#e8f0ea").set("display", "flex")
                 .set("align-items", "center").set("justify-content", "center");
         if (b != null && b.getFotoBarang() != null && !b.getFotoBarang().isBlank()) {
-            Image img = new Image("images/" + b.getFotoBarang().trim(), "");
+            Image img = new Image("/images/" + b.getFotoBarang().trim(), "");
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             thumb.add(img);
         } else {
@@ -2667,7 +2667,8 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("font-weight", "600").set("color", "#4d6a4d").set("display", "block")
                     .set("margin-bottom", "10px");
 
-            String imgSrc = "images/" + p.getFotoPengembalian();
+            String fotoVal = p.getFotoPengembalian() != null ? p.getFotoPengembalian().trim() : "";
+            String imgSrc = fotoVal.startsWith("/") ? fotoVal : (fotoVal.startsWith("images/") ? "/" + fotoVal : "/images/" + fotoVal);
             Image fotoImg = new Image(imgSrc, "Foto pengembalian");
             fotoImg.getStyle()
                     .set("width", "100%")

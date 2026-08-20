@@ -81,7 +81,7 @@ public class ForgotPasswordView extends HorizontalLayout {
         panel.add(mkBubble("60px",  "rgba(143,176,138,0.20)", "12%", null, null, "78%"));
         panel.add(mkBubble("45px",  "rgba(143,176,138,0.18)", "78%", null, null, "6%"));
 
-        Image logoImg = new Image("images/logo.png", "Property 24 Logo");
+        Image logoImg = new Image("/images/logo.png", "Property 24 Logo");
         logoImg.setWidth("280px");
         logoImg.getStyle().set("position", "relative").set("z-index", "1");
         panel.add(logoImg);
