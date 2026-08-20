@@ -22,6 +22,8 @@ import property24.service.BarangService;
 import property24.service.BookingService;
 import property24.service.PinjamanService;
 import property24.util.AuthSession;
+import property24.util.FileUploadHelper;
+import java.util.function.BiConsumer;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -778,23 +780,18 @@ public class UserDashboardView extends Div {
         refreshItems[0].run();
         page.add(selectedSection);
 
-        // Upload foto bukti — real file picker
-        String[] borrowFotoName = {null};
-        Div uploadCard = new Div();
-        uploadCard.addClassName("borrow-card");
-        Span uploadLabel = new Span("Upload Foto Bukti Peminjam *");
-        uploadLabel.getStyle().set("font-size", "13px").set("font-weight", "600")
-                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "8px");
-        MemoryBuffer borrowBuffer = new MemoryBuffer();
-        Upload borrowUpload = new Upload(borrowBuffer);
-        borrowUpload.setAcceptedFileTypes("image/*");
-        borrowUpload.setMaxFiles(1);
-        borrowUpload.setMaxFileSize(10 * 1024 * 1024);
-        borrowUpload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Bukti"));
-        borrowUpload.setDropLabel(new Span("JPG, PNG, or HEIC · Max 10MB"));
-        borrowUpload.setWidthFull();
-        borrowUpload.addSucceededListener(ev -> borrowFotoName[0] = ev.getFileName());
-        uploadCard.add(uploadLabel, borrowUpload);
+        // Upload / Camera foto bukti
+        final String[] borrowSavedFoto = {null};
+        final String[] borrowRawFileName = {null};
+        final MemoryBuffer borrowBuffer = new MemoryBuffer();
+
+        Div uploadCard = buildPhotoUploadSection(
+                "Foto Bukti Peminjam *",
+                "pinjam_" + (currentUser != null ? currentUser.getId() : "user"),
+                borrowSavedFoto,
+                borrowBuffer,
+                borrowRawFileName
+        );
         page.add(uploadCard);
 
         // Inline validation error banner
@@ -865,20 +862,22 @@ public class UserDashboardView extends Div {
                 }
             }
 
-            if (borrowFotoName[0] == null) {
-                errBanner.setText("⚠️ Harap upload / ambil Foto Bukti terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
-                err("Upload foto bukti terlebih dahulu!");
-                return;
+            String savedFoto = borrowSavedFoto[0];
+            if (savedFoto == null && borrowRawFileName[0] != null) {
+                try {
+                    savedFoto = FileUploadHelper.saveImage(borrowBuffer, borrowRawFileName[0]);
+                } catch (Exception ex) {
+                    errBanner.setText("⚠️ Gagal menyimpan foto bukti: " + ex.getMessage());
+                    errBanner.getStyle().set("display", "flex");
+                    err("Gagal menyimpan foto bukti!");
+                    return;
+                }
             }
 
-            String savedFoto = null;
-            try {
-                savedFoto = property24.util.FileUploadHelper.saveImage(borrowBuffer, borrowFotoName[0]);
-            } catch (Exception ex) {
-                errBanner.setText("⚠️ Gagal menyimpan foto bukti: " + ex.getMessage());
+            if (savedFoto == null) {
+                errBanner.setText("⚠️ Harap ambil foto dengan kamera atau upload foto bukti terlebih dahulu!");
                 errBanner.getStyle().set("display", "flex");
-                err("Gagal menyimpan foto bukti!");
+                err("Ambil atau upload foto bukti terlebih dahulu!");
                 return;
             }
 
@@ -1324,23 +1323,18 @@ public class UserDashboardView extends Div {
         itemCard.add(thumb, meta);
         page.add(itemCard);
 
-        // Upload foto bukti penempatan — real file picker
-        String[] returnFotoName = {null};
-        Div uploadCard = new Div();
-        uploadCard.addClassName("borrow-card");
-        Span ulLabel = new Span("Upload Foto Bukti Penempatan Barang *");
-        ulLabel.getStyle().set("font-size", "13px").set("font-weight", "600")
-                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "8px");
-        MemoryBuffer returnBuffer = new MemoryBuffer();
-        Upload returnUpload = new Upload(returnBuffer);
-        returnUpload.setAcceptedFileTypes("image/*");
-        returnUpload.setMaxFiles(1);
-        returnUpload.setMaxFileSize(10 * 1024 * 1024);
-        returnUpload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Penempatan"));
-        returnUpload.setDropLabel(new Span("JPG, PNG, or HEIC · Max 10MB"));
-        returnUpload.setWidthFull();
-        returnUpload.addSucceededListener(ev -> returnFotoName[0] = ev.getFileName());
-        uploadCard.add(ulLabel, returnUpload);
+        // Upload / Camera foto bukti penempatan
+        final String[] returnSavedFoto = {null};
+        final String[] returnRawFileName = {null};
+        final MemoryBuffer returnBuffer = new MemoryBuffer();
+
+        Div uploadCard = buildPhotoUploadSection(
+                "Foto Bukti Penempatan Barang *",
+                "return_detail" + detail.getId(),
+                returnSavedFoto,
+                returnBuffer,
+                returnRawFileName
+        );
         page.add(uploadCard);
 
         // Catatan pengembalian (opsional)
@@ -1381,20 +1375,23 @@ public class UserDashboardView extends Div {
 
         kirimBtn.addClickListener(e -> {
             errBanner.getStyle().set("display", "none");
-            if (returnFotoName[0] == null) {
-                errBanner.setText("⚠️ Harap upload / ambil Foto Bukti Penempatan Barang terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
-                err("Upload foto bukti penempatan terlebih dahulu!");
-                return;
+
+            String savedFoto = returnSavedFoto[0];
+            if (savedFoto == null && returnRawFileName[0] != null) {
+                try {
+                    savedFoto = FileUploadHelper.saveImage(returnBuffer, returnRawFileName[0]);
+                } catch (Exception ex) {
+                    errBanner.setText("⚠️ Gagal menyimpan foto pengembalian: " + ex.getMessage());
+                    errBanner.getStyle().set("display", "flex");
+                    err("Gagal menyimpan foto pengembalian!");
+                    return;
+                }
             }
 
-            String savedFoto = null;
-            try {
-                savedFoto = property24.util.FileUploadHelper.saveImage(returnBuffer, returnFotoName[0]);
-            } catch (Exception ex) {
-                errBanner.setText("⚠️ Gagal menyimpan foto pengembalian: " + ex.getMessage());
+            if (savedFoto == null) {
+                errBanner.setText("⚠️ Harap ambil foto dengan kamera atau upload foto bukti penempatan terlebih dahulu!");
                 errBanner.getStyle().set("display", "flex");
-                err("Gagal menyimpan foto pengembalian!");
+                err("Ambil atau upload foto bukti penempatan terlebih dahulu!");
                 return;
             }
 
@@ -1495,22 +1492,18 @@ public class UserDashboardView extends Div {
         page.add(itemCard);
 
         // Upload foto bukti kerusakan
-        String[] fotoNameArr = {null};
-        Div uploadCard = new Div();
-        uploadCard.addClassName("borrow-card");
-        Span ulLabel = new Span("Upload Foto Bukti Kerusakan *");
-        ulLabel.getStyle().set("font-size", "13px").set("font-weight", "700")
-                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "8px");
-        MemoryBuffer buffer = new MemoryBuffer();
-        Upload upload = new Upload(buffer);
-        upload.setAcceptedFileTypes("image/*");
-        upload.setMaxFiles(1);
-        upload.setMaxFileSize(10 * 1024 * 1024);
-        upload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Kerusakan"));
-        upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
-        upload.setWidthFull();
-        upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
-        uploadCard.add(ulLabel, upload);
+        // Upload / Camera foto bukti kerusakan
+        final String[] rusakSavedFoto = {null};
+        final String[] rusakRawFileName = {null};
+        final MemoryBuffer buffer = new MemoryBuffer();
+
+        Div uploadCard = buildPhotoUploadSection(
+                "Foto Bukti Kerusakan *",
+                "rusak_detail" + detail.getId(),
+                rusakSavedFoto,
+                buffer,
+                rusakRawFileName
+        );
         page.add(uploadCard);
 
         // Deskripsi kerusakan (wajib)
@@ -1534,20 +1527,23 @@ public class UserDashboardView extends Div {
                 .set("cursor", "pointer").set("margin-top", "6px");
 
         kirimBtn.addClickListener(e -> {
-            if (fotoNameArr[0] == null) {
-                err("Upload foto bukti kerusakan terlebih dahulu!");
-                return;
-            }
             if (catatanField.getValue().isBlank()) {
                 err("Isi deskripsi kerusakan terlebih dahulu!");
                 return;
             }
 
-            String savedFoto = null;
-            try {
-                savedFoto = property24.util.FileUploadHelper.saveImage(buffer, fotoNameArr[0]);
-            } catch (Exception ex) {
-                err("Gagal menyimpan foto bukti kerusakan!");
+            String savedFoto = rusakSavedFoto[0];
+            if (savedFoto == null && rusakRawFileName[0] != null) {
+                try {
+                    savedFoto = FileUploadHelper.saveImage(buffer, rusakRawFileName[0]);
+                } catch (Exception ex) {
+                    err("Gagal menyimpan foto bukti kerusakan!");
+                    return;
+                }
+            }
+
+            if (savedFoto == null) {
+                err("Harap ambil foto dengan kamera atau upload foto bukti kerusakan terlebih dahulu!");
                 return;
             }
 
@@ -1660,17 +1656,327 @@ public class UserDashboardView extends Div {
     private Button buildUserUploadButton(String label) {
         Button btn = new Button(label);
         btn.getStyle()
-                .set("background", "#e8f5e8")
-                .set("color", "#4d8f4d")
-                .set("border", "1.5px dashed rgba(77,143,77,0.4)")
+                .set("background", "#f4f8f5")
+                .set("color", "#2e7d32")
+                .set("border", "1.5px dashed rgba(77,143,77,0.45)")
                 .set("border-radius", "10px")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-weight", "600")
-                .set("font-size", "14px")
+                .set("font-size", "13px")
                 .set("width", "100%")
-                .set("height", "52px")
+                .set("height", "46px")
                 .set("cursor", "pointer");
         return btn;
+    }
+
+    /**
+     * Opens an in-browser WebRTC camera capture modal.
+     */
+    private void openCameraModal(String title, String filePrefix, BiConsumer<String, String> onPhotoSaved) {
+        Dialog cameraDialog = new Dialog();
+        cameraDialog.setModal(true);
+        cameraDialog.setWidth("min(480px, 94vw)");
+        cameraDialog.getElement().getStyle().set("--lumo-overlay-border-radius", "16px");
+
+        String uid = "cam_" + System.currentTimeMillis();
+        String videoId = "v_" + uid;
+        String canvasId = "c_" + uid;
+        String previewId = "p_" + uid;
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.getStyle()
+                .set("background", "#ffffff")
+                .set("border-radius", "16px")
+                .set("padding", "20px")
+                .set("gap", "14px");
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        // Header
+        Div header = new Div();
+        header.getStyle().set("display", "flex").set("align-items", "center").set("justify-content", "space-between").set("width", "100%");
+        Span titleSpan = new Span("📸 " + (title != null ? title : "Ambil Foto"));
+        titleSpan.getStyle().set("font-size", "16px").set("font-weight", "800").set("color", "#1a2e1a");
+        Button closeTopBtn = new Button("✕", ev -> cameraDialog.close());
+        closeTopBtn.getStyle().set("background", "transparent").set("color", "#8fb08a").set("border", "none").set("font-size", "18px").set("cursor", "pointer");
+        header.add(titleSpan, closeTopBtn);
+
+        // Camera viewport box
+        Div viewportBox = new Div();
+        viewportBox.getStyle()
+                .set("position", "relative")
+                .set("width", "100%")
+                .set("height", "290px")
+                .set("background", "#0d1b10")
+                .set("border-radius", "12px")
+                .set("overflow", "hidden")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("box-shadow", "inset 0 0 20px rgba(0,0,0,0.5)");
+
+        // Video element
+        Div videoHolder = new Div();
+        videoHolder.getElement().setProperty("innerHTML",
+                "<video id='" + videoId + "' autoplay playsinline muted style='width:100%;height:100%;object-fit:cover;'></video>" +
+                "<canvas id='" + canvasId + "' style='display:none;'></canvas>" +
+                "<img id='" + previewId + "' style='display:none;width:100%;height:100%;object-fit:contain;background:#000;' />");
+        videoHolder.getStyle().set("width", "100%").set("height", "100%");
+        viewportBox.add(videoHolder);
+
+        // Subtitle / guide
+        Span guideSpan = new Span("Arahkan kamera ke objek yang ingin difoto, lalu tekan tombol Ambil Foto.");
+        guideSpan.getStyle().set("font-size", "12px").set("color", "#6b8a6b").set("text-align", "center").set("display", "block");
+
+        // Action buttons
+        Div buttonRow = new Div();
+        buttonRow.getStyle().set("display", "flex").set("gap", "10px").set("width", "100%");
+
+        Button snapBtn = new Button("📸 Ambil Foto");
+        snapBtn.getStyle()
+                .set("flex", "1").set("height", "44px")
+                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
+                .set("color", "white").set("border", "none").set("border-radius", "10px")
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+
+        Button retakeBtn = new Button("🔄 Foto Ulang");
+        retakeBtn.setVisible(false);
+        retakeBtn.getStyle()
+                .set("flex", "1").set("height", "44px")
+                .set("background", "#f0f4f0").set("color", "#4a6a4a")
+                .set("border", "1px solid #c8d6c8").set("border-radius", "10px")
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+
+        Button usePhotoBtn = new Button("✅ Gunakan Foto Ini");
+        usePhotoBtn.setVisible(false);
+        usePhotoBtn.getStyle()
+                .set("flex", "1").set("height", "44px")
+                .set("background", "linear-gradient(135deg,#2e7d32,#1b5e20)")
+                .set("color", "white").set("border", "none").set("border-radius", "10px")
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+
+        snapBtn.addClickListener(e -> {
+            String snapJs =
+                    "const v = document.getElementById('" + videoId + "');" +
+                    "const c = document.getElementById('" + canvasId + "');" +
+                    "const p = document.getElementById('" + previewId + "');" +
+                    "if(v && v.videoWidth > 0){" +
+                    "  c.width = v.videoWidth;" +
+                    "  c.height = v.videoHeight;" +
+                    "  const ctx = c.getContext('2d');" +
+                    "  ctx.drawImage(v, 0, 0, c.width, c.height);" +
+                    "  const dUrl = c.toDataURL('image/jpeg', 0.88);" +
+                    "  p.src = dUrl;" +
+                    "  p.style.display = 'block';" +
+                    "  v.style.display = 'none';" +
+                    "  window['activeCapturedPhoto'] = dUrl;" +
+                    "}";
+            UI.getCurrent().getPage().executeJs(snapJs);
+            snapBtn.setVisible(false);
+            retakeBtn.setVisible(true);
+            usePhotoBtn.setVisible(true);
+        });
+
+        retakeBtn.addClickListener(e -> {
+            String retakeJs =
+                    "const v = document.getElementById('" + videoId + "');" +
+                    "const p = document.getElementById('" + previewId + "');" +
+                    "if(p) p.style.display = 'none';" +
+                    "if(v) v.style.display = 'block';" +
+                    "window['activeCapturedPhoto'] = null;";
+            UI.getCurrent().getPage().executeJs(retakeJs);
+            snapBtn.setVisible(true);
+            retakeBtn.setVisible(false);
+            usePhotoBtn.setVisible(false);
+        });
+
+        usePhotoBtn.addClickListener(e -> {
+            UI.getCurrent().getPage().executeJs("return window['activeCapturedPhoto'] || '';")
+                    .then(String.class, dataUrl -> {
+                        if (dataUrl != null && !dataUrl.isBlank()) {
+                            // Stop camera stream
+                            UI.getCurrent().getPage().executeJs(
+                                    "if(window['activeCameraStream']){ window['activeCameraStream'].getTracks().forEach(t=>t.stop()); window['activeCameraStream']=null; }");
+                            try {
+                                String saved = FileUploadHelper.saveBase64Image(dataUrl, filePrefix);
+                                cameraDialog.close();
+                                if (onPhotoSaved != null) {
+                                    onPhotoSaved.accept(saved, dataUrl);
+                                }
+                                ok("Foto kamera berhasil digunakan!");
+                            } catch (Exception ex) {
+                                err("Gagal memproses foto kamera: " + ex.getMessage());
+                            }
+                        } else {
+                            err("Silakan ambil foto terlebih dahulu!");
+                        }
+                    });
+        });
+
+        buttonRow.add(retakeBtn, snapBtn, usePhotoBtn);
+        layout.add(header, viewportBox, guideSpan, buttonRow);
+        cameraDialog.add(layout);
+
+        cameraDialog.addOpenedChangeListener(ev -> {
+            if (ev.isOpened()) {
+                // Initialize camera
+                String initJs =
+                        "setTimeout(() => {" +
+                        "  const v = document.getElementById('" + videoId + "');" +
+                        "  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){" +
+                        "    navigator.mediaDevices.getUserMedia({" +
+                        "      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }" +
+                        "    }).then(s => {" +
+                        "      if(v) v.srcObject = s;" +
+                        "      window['activeCameraStream'] = s;" +
+                        "    }).catch(err => {" +
+                        "      navigator.mediaDevices.getUserMedia({ video: true }).then(s => {" +
+                        "        if(v) v.srcObject = s;" +
+                        "        window['activeCameraStream'] = s;" +
+                        "      }).catch(e => alert('Tidak dapat mengakses kamera: ' + (e.message || e.name)));" +
+                        "    });" +
+                        "  } else {" +
+                        "    alert('Browser tidak mendukung akses kamera langsung.');" +
+                        "  }" +
+                        "}, 150);";
+                UI.getCurrent().getPage().executeJs(initJs);
+            } else {
+                // Stop camera stream on close
+                UI.getCurrent().getPage().executeJs(
+                        "if(window['activeCameraStream']){ window['activeCameraStream'].getTracks().forEach(t=>t.stop()); window['activeCameraStream']=null; }");
+            }
+        });
+
+        cameraDialog.open();
+    }
+
+    /**
+     * Builds a photo input card containing both "📸 Buka Kamera Langsung" and "📁 Pilih File dari Galeri/Dokumen",
+     * along with an instant visual preview card.
+     */
+    private Div buildPhotoUploadSection(
+            String labelText,
+            String filePrefix,
+            String[] finalSavedFoto,
+            MemoryBuffer buffer,
+            String[] uploadedRawFileName
+    ) {
+        Div card = new Div();
+        card.addClassName("borrow-card");
+        card.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "10px");
+
+        Span titleLabel = new Span(labelText);
+        titleLabel.getStyle()
+                .set("font-size", "13px").set("font-weight", "700")
+                .set("color", "#1a2e1a").set("display", "block");
+
+        // Action choices container
+        Div choicesContainer = new Div();
+        choicesContainer.getStyle()
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("gap", "8px");
+
+        // Camera Button
+        Button openCamBtn = new Button("📸  Buka Kamera Langsung");
+        openCamBtn.setWidthFull();
+        openCamBtn.getStyle()
+                .set("height", "46px")
+                .set("background", "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
+                .set("color", "white")
+                .set("border", "none")
+                .set("border-radius", "10px")
+                .set("font-weight", "700")
+                .set("font-size", "13px")
+                .set("font-family", "'Inter', sans-serif")
+                .set("cursor", "pointer")
+                .set("box-shadow", "0 2px 8px rgba(77,143,77,0.25)");
+
+        // "ATAU" divider text
+        Div orDiv = new Div();
+        orDiv.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px").set("margin", "2px 0");
+        Div line1 = new Div(); line1.getStyle().set("flex", "1").set("height", "1px").set("background", "#e0e6e0");
+        Span orText = new Span("atau"); orText.getStyle().set("font-size", "11px").set("color", "#8fa88f").set("font-weight", "600");
+        Div line2 = new Div(); line2.getStyle().set("flex", "1").set("height", "1px").set("background", "#e0e6e0");
+        orDiv.add(line1, orText, line2);
+
+        // Upload component for file choosing
+        Upload upload = new Upload(buffer);
+        upload.setAcceptedFileTypes("image/*");
+        upload.setMaxFiles(1);
+        upload.setMaxFileSize(10 * 1024 * 1024);
+        upload.setUploadButton(buildUserUploadButton("📁  Pilih File dari Galeri / Dokumen"));
+        upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
+        upload.setWidthFull();
+
+        choicesContainer.add(openCamBtn, orDiv, upload);
+
+        // Preview box
+        Div previewBox = new Div();
+        previewBox.getStyle()
+                .set("display", "none")
+                .set("background", "#f4f8f5")
+                .set("border", "1.5px solid #8fb08a")
+                .set("border-radius", "12px")
+                .set("padding", "10px 14px")
+                .set("align-items", "center")
+                .set("gap", "12px");
+
+        Image thumbImg = new Image();
+        thumbImg.getStyle()
+                .set("width", "56px").set("height", "56px")
+                .set("border-radius", "8px").set("object-fit", "cover")
+                .set("border", "1px solid #c8d6c8").set("flex-shrink", "0");
+
+        Div infoDiv = new Div();
+        infoDiv.getStyle().set("flex", "1").set("min-width", "0");
+        Span statusBadge = new Span("✅ Foto Siap Digunakan");
+        statusBadge.getStyle().set("font-size", "12px").set("font-weight", "700").set("color", "#2e7d32").set("display", "block");
+        Span fileNameSpan = new Span("");
+        fileNameSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block")
+                .set("white-space", "nowrap").set("overflow", "hidden").set("text-overflow", "ellipsis");
+        infoDiv.add(statusBadge, fileNameSpan);
+
+        Button removeBtn = new Button("🗑️ Ganti", ev -> {
+            finalSavedFoto[0] = null;
+            uploadedRawFileName[0] = null;
+            previewBox.getStyle().set("display", "none");
+            choicesContainer.getStyle().set("display", "flex");
+        });
+        removeBtn.getStyle()
+                .set("background", "#ffebee").set("color", "#c62828")
+                .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
+                .set("font-size", "11px").set("font-weight", "700")
+                .set("height", "32px").set("cursor", "pointer");
+
+        previewBox.add(thumbImg, infoDiv, removeBtn);
+
+        // Wire camera button
+        openCamBtn.addClickListener(ev -> {
+            openCameraModal(labelText.replace("*", "").trim(), filePrefix, (savedName, dataUrl) -> {
+                finalSavedFoto[0] = savedName;
+                uploadedRawFileName[0] = null;
+                thumbImg.setSrc("images/" + savedName);
+                statusBadge.setText("📸 Foto Kamera Siap Digunakan");
+                fileNameSpan.setText(savedName);
+                previewBox.getStyle().set("display", "flex");
+                choicesContainer.getStyle().set("display", "none");
+            });
+        });
+
+        // Wire upload component
+        upload.addSucceededListener(ev -> {
+            uploadedRawFileName[0] = ev.getFileName();
+            finalSavedFoto[0] = null;
+            statusBadge.setText("📁 File Upload Siap Digunakan");
+            fileNameSpan.setText(ev.getFileName());
+            thumbImg.setSrc("images/logo.png");
+            previewBox.getStyle().set("display", "flex");
+            choicesContainer.getStyle().set("display", "none");
+        });
+
+        card.add(titleLabel, choicesContainer, previewBox);
+        return card;
     }
 
     private void ok(String msg) {
@@ -2323,29 +2629,19 @@ public class UserDashboardView extends Div {
             }
         });
 
-        // Upload foto bukti
-        String[] fotoNameArr = {null};
-        Div uploadWrapper = new Div();
-        uploadWrapper.getStyle()
-                .set("margin-top", "14px")
-                .set("width", "100%");
-        Span uploadLabel = new Span("Upload Foto Bukti *");
-        uploadLabel.getStyle()
-                .set("font-size", "13px").set("font-weight", "700")
-                .set("color", "#1a2e1a").set("display", "block").set("margin-bottom", "6px")
-                .set("font-family", "'Inter', sans-serif");
+        // Upload / Camera foto bukti
+        final String[] bookingSavedFoto = {null};
+        final String[] bookingRawFileName = {null};
+        final MemoryBuffer buffer = new MemoryBuffer();
 
-        MemoryBuffer buffer = new MemoryBuffer();
-        Upload upload = new Upload(buffer);
-        upload.setAcceptedFileTypes("image/*");
-        upload.setMaxFiles(1);
-        upload.setMaxFileSize(10 * 1024 * 1024);
-        upload.setUploadButton(buildUserUploadButton("📷  Pilih Foto Bukti"));
-        upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
-        upload.setWidthFull();
-        upload.addSucceededListener(ev -> fotoNameArr[0] = ev.getFileName());
-
-        uploadWrapper.add(uploadLabel, upload);
+        Div uploadWrapper = buildPhotoUploadSection(
+                "Foto Bukti Peminjaman *",
+                "booking_" + bk.getId(),
+                bookingSavedFoto,
+                buffer,
+                bookingRawFileName
+        );
+        uploadWrapper.getStyle().set("margin-top", "14px").set("width", "100%");
 
         formBody.add(infoBox, tglKembaliPicker, uploadWrapper);
 
@@ -2369,16 +2665,19 @@ public class UserDashboardView extends Div {
                 err("Pilih tanggal rencana kembali!");
                 return;
             }
-            if (fotoNameArr[0] == null) {
-                err("Upload foto bukti terlebih dahulu!");
-                return;
+
+            String savedFoto = bookingSavedFoto[0];
+            if (savedFoto == null && bookingRawFileName[0] != null) {
+                try {
+                    savedFoto = FileUploadHelper.saveImage(buffer, bookingRawFileName[0]);
+                } catch (Exception ex) {
+                    err("Gagal menyimpan foto bukti: " + ex.getMessage());
+                    return;
+                }
             }
 
-            String savedFoto = null;
-            try {
-                savedFoto = property24.util.FileUploadHelper.saveImage(buffer, fotoNameArr[0]);
-            } catch (Exception ex) {
-                err("Gagal menyimpan foto bukti: " + ex.getMessage());
+            if (savedFoto == null) {
+                err("Harap ambil foto dengan kamera atau upload foto bukti terlebih dahulu!");
                 return;
             }
 
