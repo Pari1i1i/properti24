@@ -2034,6 +2034,10 @@ public class UserDashboardView extends Div {
             "border-radius:22px!important;border:1px solid rgba(143,176,138,0.3)!important;}" +
             "vaadin-text-field.user-search::part(value){color:white!important;}" +
             "vaadin-text-field.user-search::part(placeholder){color:rgba(184,201,191,0.5)!important;}" +
+            "vaadin-text-field.profile-input::part(input-field){background:rgba(255,255,255,0.08)!important;border:1px solid rgba(143,176,138,0.4)!important;border-radius:10px!important;}" +
+            "vaadin-text-field.profile-input::part(value){color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;font-weight:600!important;font-size:14px!important;}" +
+            "vaadin-text-field.profile-input::part(label){color:#8fb08a!important;font-size:10px!important;font-weight:700!important;letter-spacing:1.5px!important;}" +
+            "vaadin-text-field.profile-input input{color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;}" +
             "vaadin-dialog-overlay::part(content){padding:24px!important;border-radius:18px!important;}";
         getElement().executeJs(
             "if(!document.getElementById('p24-user-css')){" +
@@ -2093,19 +2097,22 @@ public class UserDashboardView extends Div {
         header.add(avCircle, nameTxt, roleBadge);
         layout.add(header);
 
-        TextField nameField = new TextField("Nama Lengkap");
+        TextField nameField = new TextField("NAMA LENGKAP");
         nameField.setValue(currentUser.getNamaLengkap() != null ? currentUser.getNamaLengkap() : "");
         nameField.setWidthFull();
+        nameField.addClassName("profile-input");
         styleDarkField(nameField);
 
-        TextField emailField = new TextField("Email");
+        TextField emailField = new TextField("EMAIL");
         emailField.setValue(currentUser.getEmail() != null ? currentUser.getEmail() : "");
         emailField.setWidthFull();
+        emailField.addClassName("profile-input");
         styleDarkField(emailField);
 
-        TextField kelasField = new TextField("Kelas / Unit");
+        TextField kelasField = new TextField("KELAS / UNIT");
         kelasField.setValue(currentUser.getKelas() != null ? currentUser.getKelas() : "");
         kelasField.setWidthFull();
+        kelasField.addClassName("profile-input");
         styleDarkField(kelasField);
 
         layout.add(nameField, emailField, kelasField);
