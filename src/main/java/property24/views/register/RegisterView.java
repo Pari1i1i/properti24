@@ -21,6 +21,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import property24.service.UserService;
+import property24.util.SvgIcons;
 
 @Route("register")
 @PageTitle("Register | Property 24")
@@ -300,16 +301,20 @@ public class RegisterView extends Div {
         content.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "12px")
                 .set("padding", "20px 24px").set("overflow-y", "auto");
 
-        Span header = new Span("\uD83D\uDCCB Syarat & Ketentuan");
+        Div headerWrap = new Div();
+        headerWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+        headerWrap.add(SvgIcons.createIcon(SvgIcons.FILE_TEXT, 20, "#4d8f4d"));
+        Span header = new Span("Syarat & Ketentuan");
         header.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "18px")
                 .set("font-weight", "800").set("color", "#1a2e1a");
+        headerWrap.add(header);
 
         Span updated = new Span("Terakhir diperbarui: Agustus 2026");
         updated.getStyle().set("font-size", "11px").set("color", "#8fb08a").set("font-family", "'Inter',sans-serif");
 
         Hr hr = new Hr();
         hr.getStyle().set("border", "none").set("border-top", "1px solid #e8f0e8").set("margin", "4px 0");
-        content.add(header, updated, hr);
+        content.add(headerWrap, updated, hr);
 
         String[][] sections = {
             {"1. Penggunaan Sistem",
@@ -370,16 +375,20 @@ public class RegisterView extends Div {
         content.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "12px")
                 .set("padding", "20px 24px").set("overflow-y", "auto");
 
-        Span header = new Span("\uD83D\uDD12 Kebijakan Privasi");
+        Div headerWrap = new Div();
+        headerWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+        headerWrap.add(SvgIcons.createIcon(SvgIcons.LOCK, 20, "#4d8f4d"));
+        Span header = new Span("Kebijakan Privasi");
         header.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "18px")
                 .set("font-weight", "800").set("color", "#1a2e1a");
+        headerWrap.add(header);
 
         Span updated = new Span("Terakhir diperbarui: Agustus 2026");
         updated.getStyle().set("font-size", "11px").set("color", "#8fb08a").set("font-family", "'Inter',sans-serif");
 
         Hr hr = new Hr();
         hr.getStyle().set("border", "none").set("border-top", "1px solid #e8f0e8").set("margin", "4px 0");
-        content.add(header, updated, hr);
+        content.add(headerWrap, updated, hr);
 
         String[][] sections = {
             {"1. Data yang Kami Kumpulkan",

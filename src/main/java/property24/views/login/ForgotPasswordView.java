@@ -19,6 +19,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import property24.service.PasswordResetService;
+import property24.util.SvgIcons;
 
 @Route("forgot-password")
 @PageTitle("Forgot Password | Property 24")
@@ -171,13 +172,18 @@ public class ForgotPasswordView extends HorizontalLayout {
         footer.getStyle()
                 .set("text-align", "center")
                 .set("margin-top", "24px");
-        Anchor loginLink = new Anchor("login", "← Kembali ke Halaman Login");
+        Anchor loginLink = new Anchor("login", "");
         loginLink.getStyle()
                 .set("color", "#8fb08a")
                 .set("font-family", "'Inter', sans-serif")
                 .set("font-size", "13px")
                 .set("text-decoration", "none")
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("gap", "6px")
                 .set("font-weight", "600");
+        loginLink.add(SvgIcons.createIcon(SvgIcons.ARROW_LEFT, 14, "#8fb08a"));
+        loginLink.add(new Span("Kembali ke Halaman Login"));
         footer.add(loginLink);
 
         formBox.add(brandRow, title, subtitle, divider, step1Container, step2Container, step3Container, successContainer, footer);
@@ -199,7 +205,8 @@ public class ForgotPasswordView extends HorizontalLayout {
         emailField.getElement().setAttribute("autocomplete", "off");
         emailField.getElement().setAttribute("name", "fp-email");
 
-        Button sendOtpBtn = mkButton("KIRIM KODE OTP  →");
+        Button sendOtpBtn = mkButton("KIRIM KODE OTP");
+        SvgIcons.attachIconAndText(sendOtpBtn, "KIRIM KODE OTP", SvgIcons.ARROW_RIGHT, 15, "white", false);
         sendOtpBtn.addClickListener(e -> handleSendOtp());
         emailField.addKeyPressListener(Key.ENTER, e -> handleSendOtp());
 
@@ -242,7 +249,8 @@ public class ForgotPasswordView extends HorizontalLayout {
             otpContainer.add(digitBox);
         }
 
-        Button verifyBtn = mkButton("VERIFIKASI OTP  →");
+        Button verifyBtn = mkButton("VERIFIKASI OTP");
+        SvgIcons.attachIconAndText(verifyBtn, "VERIFIKASI OTP", SvgIcons.ARROW_RIGHT, 15, "white", false);
         verifyBtn.addClickListener(e -> handleVerifyOtp());
 
         Button resendBtn = new Button("Kirim Ulang OTP");
@@ -284,7 +292,8 @@ public class ForgotPasswordView extends HorizontalLayout {
         confirmPasswordField.setPrefixComponent(svgIcon(ICON_LOCK));
         confirmPasswordField.getElement().setAttribute("autocomplete", "new-password");
 
-        Button resetBtn = mkButton("SIMPAN PASSWORD BARU  →");
+        Button resetBtn = mkButton("SIMPAN PASSWORD BARU");
+        SvgIcons.attachIconAndText(resetBtn, "SIMPAN PASSWORD BARU", SvgIcons.CHECK, 15, "white", false);
         resetBtn.addClickListener(e -> handleResetPassword());
         confirmPasswordField.addKeyPressListener(Key.ENTER, e -> handleResetPassword());
 
@@ -437,7 +446,7 @@ public class ForgotPasswordView extends HorizontalLayout {
     }
 
     private Button mkButton(String text) {
-        Button b = new Button(text);
+        Button b = new Button();
         b.setWidthFull();
         b.getStyle()
                 .set("background", "linear-gradient(135deg, #4d8f4d 0%, #8fb08a 100%)")
@@ -449,10 +458,15 @@ public class ForgotPasswordView extends HorizontalLayout {
                 .set("border", "none")
                 .set("border-radius", "10px")
                 .set("height", "50px")
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px")
                 .set("cursor", "pointer")
                 .set("margin-top", "18px")
                 .set("transition", "all 0.3s ease")
                 .set("box-shadow", "0 4px 15px rgba(78,143,78,0.25)");
+        b.setText(text);
         return b;
     }
 

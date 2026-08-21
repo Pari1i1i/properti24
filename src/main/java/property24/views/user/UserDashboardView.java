@@ -23,6 +23,7 @@ import property24.service.BookingService;
 import property24.service.PinjamanService;
 import property24.util.AuthSession;
 import property24.util.FileUploadHelper;
+import property24.util.SvgIcons;
 import java.util.function.BiConsumer;
 
 import java.time.LocalDate;
@@ -269,13 +270,14 @@ public class UserDashboardView extends Div {
 
         String name = currentUser.getNamaLengkap() != null
                 ? currentUser.getNamaLengkap().split(" ")[0] : "User";
-        Span greetText = new Span("Halo " + name + " 👋");
+        Div greetRow = new Div();
+        greetRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "6px").set("margin-bottom", "10px");
+        Span greetText = new Span("Halo, " + name);
         greetText.getStyle()
                 .set("color", "white")
                 .set("font-size", "15px")
-                .set("font-weight", "600")
-                .set("display", "block")
-                .set("margin-bottom", "10px");
+                .set("font-weight", "600");
+        greetRow.add(greetText, SvgIcons.createIcon(SvgIcons.SPARKLES, 16, "#8fb08a"));
 
         // Search bar
         TextField search = new TextField();
@@ -284,7 +286,7 @@ public class UserDashboardView extends Div {
         search.addClassName("user-search");
         search.getStyle().set("margin-bottom", "12px");
 
-        greeting.add(greetText, search);
+        greeting.add(greetRow, search);
         contentArea.add(greeting);
 
         // Category chips
@@ -461,11 +463,9 @@ public class UserDashboardView extends Div {
         // Stars
         int stars = b.getBintangSaatIni() != null ? b.getBintangSaatIni() : 0;
         Div starsDiv = new Div();
-        starsDiv.getStyle().set("display", "flex").set("gap", "1px").set("margin-bottom", "4px");
+        starsDiv.getStyle().set("display", "flex").set("gap", "2px").set("margin-bottom", "4px").set("align-items", "center");
         for (int i = 1; i <= 5; i++) {
-            Span s = new Span("★");
-            s.getStyle().set("color", i <= stars ? "#f5a623" : "#dde0da").set("font-size", "12px");
-            starsDiv.add(s);
+            starsDiv.add(SvgIcons.createFilledIcon(SvgIcons.STAR, 12, i <= stars ? "#f5a623" : "#dde0da"));
         }
 
         // Desc
@@ -824,8 +824,7 @@ public class UserDashboardView extends Div {
             errBanner.getStyle().set("display", "none");
 
             if (selectedItems.isEmpty()) {
-                errBanner.setText("⚠️ Belum ada barang yang dipilih! Silakan kembali ke Dashboard untuk memilih barang.");
-                errBanner.getStyle().set("display", "flex");
+                setBannerError(errBanner, "Belum ada barang yang dipilih! Silakan kembali ke Dashboard untuk memilih barang.");
                 err("Pilih minimal 1 barang dari Dashboard!");
                 return;
             }
@@ -836,27 +835,23 @@ public class UserDashboardView extends Div {
 
                 if (h.ruanganBox.getValue() == null) {
                     h.ruanganBox.setInvalid(true);
-                    errBanner.setText("⚠️ Harap pilih Ruang Pemakaian untuk '" + h.barang.getNamaBarang() + "'!");
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Harap pilih Ruang Pemakaian untuk '" + h.barang.getNamaBarang() + "'!");
                     err("Pilih ruangan pemakaian untuk " + h.barang.getNamaBarang() + "!");
                     return;
                 }
                 if (h.tujuanField.getValue().isBlank()) {
                     h.tujuanField.setInvalid(true);
-                    errBanner.setText("⚠️ Harap isi Tujuan Peminjaman untuk '" + h.barang.getNamaBarang() + "'!");
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Harap isi Tujuan Peminjaman untuk '" + h.barang.getNamaBarang() + "'!");
                     err("Isi tujuan peminjaman untuk " + h.barang.getNamaBarang() + "!");
                     return;
                 }
                 if (h.tglPinjamPicker.getValue() == null) {
-                    errBanner.setText("⚠️ Harap pilih Tanggal Pinjam untuk '" + h.barang.getNamaBarang() + "'!");
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Harap pilih Tanggal Pinjam untuk '" + h.barang.getNamaBarang() + "'!");
                     err("Pilih tanggal pinjam!");
                     return;
                 }
                 if (h.tglKembaliPicker.getValue() == null) {
-                    errBanner.setText("⚠️ Harap pilih Tanggal Kembali untuk '" + h.barang.getNamaBarang() + "'!");
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Harap pilih Tanggal Kembali untuk '" + h.barang.getNamaBarang() + "'!");
                     err("Pilih tanggal kembali!");
                     return;
                 }
@@ -867,16 +862,14 @@ public class UserDashboardView extends Div {
                 try {
                     savedFoto = FileUploadHelper.saveImage(borrowBuffer, borrowRawFileName[0]);
                 } catch (Exception ex) {
-                    errBanner.setText("⚠️ Gagal menyimpan foto bukti: " + ex.getMessage());
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Gagal menyimpan foto bukti: " + ex.getMessage());
                     err("Gagal menyimpan foto bukti!");
                     return;
                 }
             }
 
             if (savedFoto == null) {
-                errBanner.setText("⚠️ Harap ambil foto dengan kamera atau upload foto bukti terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
+                setBannerError(errBanner, "Harap ambil foto dengan kamera atau upload foto bukti terlebih dahulu!");
                 err("Ambil atau upload foto bukti terlebih dahulu!");
                 return;
             }
@@ -899,8 +892,7 @@ public class UserDashboardView extends Div {
                 ok("Peminjaman berhasil diajukan! Barang berhasil dipinjam.");
                 switchTab("myitems");
             } catch (Exception ex) {
-                errBanner.setText("⚠️ Gagal mengajukan peminjaman: " + ex.getMessage());
-                errBanner.getStyle().set("display", "flex");
+                setBannerError(errBanner, "Gagal mengajukan peminjaman: " + ex.getMessage());
                 err("Gagal mengajukan peminjaman: " + ex.getMessage());
             }
         });
@@ -1157,12 +1149,14 @@ public class UserDashboardView extends Div {
                     .set("font-weight", "700").set("font-size", "12px").set("cursor", "pointer");
             returnBtn.addClickListener(ev -> showReturnForm(d));
 
-            Button laporRusakBtn = new Button("⚠️ Lapor Rusak");
+            Button laporRusakBtn = new Button();
             laporRusakBtn.getStyle()
                     .set("flex", "1").set("height", "36px")
                     .set("background", "white").set("color", "#c62828")
                     .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
-                    .set("font-weight", "700").set("font-size", "12px").set("cursor", "pointer");
+                    .set("font-weight", "700").set("font-size", "12px").set("cursor", "pointer")
+                    .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px");
+            SvgIcons.attachIconAndText(laporRusakBtn, "Lapor Rusak", SvgIcons.ALERT_TRIANGLE, 13, "#c62828", true);
             laporRusakBtn.addClickListener(ev -> showLaporRusakUserForm(d));
 
             btnRow.add(returnBtn, laporRusakBtn);
@@ -1170,9 +1164,7 @@ public class UserDashboardView extends Div {
         } else if (isReturned) {
             Div verifiedRow = new Div();
             verifiedRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "4px").set("margin-top", "8px");
-            Div checkIco = new Div();
-            checkIco.getElement().setProperty("innerHTML",
-                    "<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='#2ed573' stroke-width='2'><polyline points='20 6 9 17 4 12'/></svg>");
+            Div checkIco = SvgIcons.createIcon(SvgIcons.CHECK_CIRCLE, 14, "#2ed573");
             Span verTxt = new Span("Verified & Returned");
             verTxt.getStyle().set("font-size", "11px").set("color", "#2ed573").set("font-weight", "600");
             verifiedRow.add(checkIco, verTxt);
@@ -1185,8 +1177,12 @@ public class UserDashboardView extends Div {
                     .set("margin-top", "10px").set("display", "flex")
                     .set("flex-direction", "column").set("gap", "6px");
 
-            Span rHeader = new Span("⚠️ Pengembalian Ditolak Admin!");
+            Div rHeaderWrap = new Div();
+            rHeaderWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "6px");
+            rHeaderWrap.add(SvgIcons.createIcon(SvgIcons.ALERT_TRIANGLE, 14, "#c62828"));
+            Span rHeader = new Span("Pengembalian Ditolak Admin!");
             rHeader.getStyle().set("font-size", "12px").set("font-weight", "700").set("color", "#c62828");
+            rHeaderWrap.add(rHeader);
 
             String noteAdmin = pObj != null && pObj.getCatatanAdmin() != null && !pObj.getCatatanAdmin().isBlank()
                     ? pObj.getCatatanAdmin()
@@ -1194,15 +1190,17 @@ public class UserDashboardView extends Div {
             Span rNote = new Span("Alasan Admin: " + noteAdmin);
             rNote.getStyle().set("font-size", "11px").set("color", "#b71c1c");
 
-            Button reSubmitBtn = new Button("🔄 Ajukan Ulang Pengembalian");
+            Button reSubmitBtn = new Button();
             reSubmitBtn.getStyle()
                     .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
                     .set("color", "white").set("border", "none").set("border-radius", "8px")
                     .set("font-size", "11px").set("font-weight", "700")
+                    .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
                     .set("height", "34px").set("cursor", "pointer").set("margin-top", "4px");
+            SvgIcons.attachIconAndText(reSubmitBtn, "Ajukan Ulang Pengembalian", SvgIcons.REFRESH_CW, 13, "white", true);
             reSubmitBtn.addClickListener(ev -> showReturnForm(d));
 
-            rejectBox.add(rHeader, rNote, reSubmitBtn);
+            rejectBox.add(rHeaderWrap, rNote, reSubmitBtn);
             meta.add(rejectBox);
         } else {
             Span pendingTxt = new Span("Waiting for admin verification");
@@ -1317,9 +1315,13 @@ public class UserDashboardView extends Div {
                 .set("font-size", "9px").set("font-weight", "700")
                 .set("padding", "2px 8px").set("border-radius", "20px");
         String ruanganStr = detail.getRuangan() != null ? detail.getRuangan().getNamaRuangan() : "—";
-        Span locSpan = new Span("📍 " + ruanganStr);
-        locSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block").set("margin-top", "3px");
-        meta.add(bName, avBadge, locSpan);
+        Div locRow = new Div();
+        locRow.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "4px").set("margin-top", "3px");
+        locRow.add(SvgIcons.createIcon(SvgIcons.MAP_PIN, 11, "#6b8a6b"));
+        Span locSpan = new Span(ruanganStr);
+        locSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b");
+        locRow.add(locSpan);
+        meta.add(bName, avBadge, locRow);
         itemCard.add(thumb, meta);
         page.add(itemCard);
 
@@ -1381,16 +1383,14 @@ public class UserDashboardView extends Div {
                 try {
                     savedFoto = FileUploadHelper.saveImage(returnBuffer, returnRawFileName[0]);
                 } catch (Exception ex) {
-                    errBanner.setText("⚠️ Gagal menyimpan foto pengembalian: " + ex.getMessage());
-                    errBanner.getStyle().set("display", "flex");
+                    setBannerError(errBanner, "Gagal menyimpan foto pengembalian: " + ex.getMessage());
                     err("Gagal menyimpan foto pengembalian!");
                     return;
                 }
             }
 
             if (savedFoto == null) {
-                errBanner.setText("⚠️ Harap ambil foto dengan kamera atau upload foto bukti penempatan terlebih dahulu!");
-                errBanner.getStyle().set("display", "flex");
+                setBannerError(errBanner, "Harap ambil foto dengan kamera atau upload foto bukti penempatan terlebih dahulu!");
                 err("Ambil atau upload foto bukti penempatan terlebih dahulu!");
                 return;
             }
@@ -1400,8 +1400,7 @@ public class UserDashboardView extends Div {
                 ok("Pengembalian berhasil diajukan! Menunggu verifikasi admin.");
                 switchTab("myitems");
             } catch (Exception ex) {
-                errBanner.setText("⚠️ Gagal mengajukan pengembalian: " + ex.getMessage());
-                errBanner.getStyle().set("display", "flex");
+                setBannerError(errBanner, "Gagal mengajukan pengembalian: " + ex.getMessage());
                 err("Gagal mengajukan pengembalian!");
             }
         });
@@ -1447,12 +1446,16 @@ public class UserDashboardView extends Div {
                 + "<polyline points='15 18 9 12 15 6'/></svg>");
         backBtn.getStyle().set("cursor", "pointer");
         backBtn.addClickListener(e -> switchTab("myitems"));
-        Span phTitle = new Span("⚠️ Laporkan Kerusakan Barang");
+        Div titleWrap = new Div();
+        titleWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+        titleWrap.add(SvgIcons.createIcon(SvgIcons.ALERT_TRIANGLE, 20, "#c62828"));
+        Span phTitle = new Span("Laporkan Kerusakan Barang");
         phTitle.getStyle().set("font-size", "18px").set("font-weight", "800").set("color", "#c62828");
+        titleWrap.add(phTitle);
         Span phSub = new Span("Barang yang Anda pinjam mengalami kerusakan? Laporkan dan ajukan pengembalian.");
         phSub.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block");
         Div phTxt = new Div();
-        phTxt.add(phTitle, phSub);
+        phTxt.add(titleWrap, phSub);
         ph.add(backBtn, phTxt);
         page.add(ph);
 
@@ -1485,9 +1488,13 @@ public class UserDashboardView extends Div {
                 .set("font-size", "9px").set("font-weight", "700")
                 .set("padding", "2px 8px").set("border-radius", "20px");
         String ruanganStr = detail.getRuangan() != null ? detail.getRuangan().getNamaRuangan() : "—";
-        Span locSpan = new Span("📍 " + ruanganStr);
-        locSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block").set("margin-top", "3px");
-        meta.add(bName, avBadge, locSpan);
+        Div locRow = new Div();
+        locRow.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "4px").set("margin-top", "3px");
+        locRow.add(SvgIcons.createIcon(SvgIcons.MAP_PIN, 11, "#6b8a6b"));
+        Span locSpan = new Span(ruanganStr);
+        locSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b");
+        locRow.add(locSpan);
+        meta.add(bName, avBadge, locRow);
         itemCard.add(thumb, meta);
         page.add(itemCard);
 
@@ -1517,14 +1524,16 @@ public class UserDashboardView extends Div {
         page.add(catatanCard);
 
         // Submit button
-        Button kirimBtn = new Button("⚠️ Kirim Laporan Kerusakan & Return");
+        Button kirimBtn = new Button();
         kirimBtn.setWidthFull();
         kirimBtn.getStyle()
                 .set("height", "50px").set("border-radius", "12px")
                 .set("background", "linear-gradient(135deg,#e02a2a,#b31717)")
                 .set("color", "white").set("font-weight", "700")
                 .set("font-size", "14px").set("border", "none")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "8px")
                 .set("cursor", "pointer").set("margin-top", "6px");
+        SvgIcons.attachIconAndText(kirimBtn, "Kirim Laporan Kerusakan & Return", SvgIcons.ALERT_TRIANGLE, 16, "white", true);
 
         kirimBtn.addClickListener(e -> {
             if (catatanField.getValue().isBlank()) {
@@ -1653,8 +1662,8 @@ public class UserDashboardView extends Div {
         return d;
     }
 
-    private Button buildUserUploadButton(String label) {
-        Button btn = new Button(label);
+    private Button buildUserUploadButton(String label, String iconPath) {
+        Button btn = new Button();
         btn.getStyle()
                 .set("background", "#f4f8f5")
                 .set("color", "#2e7d32")
@@ -1665,7 +1674,12 @@ public class UserDashboardView extends Div {
                 .set("font-size", "13px")
                 .set("width", "100%")
                 .set("height", "46px")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px")
                 .set("cursor", "pointer");
+        SvgIcons.attachIconAndText(btn, label, iconPath, 16, "#2e7d32", true);
         return btn;
     }
 
@@ -1695,11 +1709,19 @@ public class UserDashboardView extends Div {
         // Header
         Div header = new Div();
         header.getStyle().set("display", "flex").set("align-items", "center").set("justify-content", "space-between").set("width", "100%");
-        Span titleSpan = new Span("📸 " + (title != null ? title : "Ambil Foto"));
+        Div titleWrap = new Div();
+        titleWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+        titleWrap.add(SvgIcons.createIcon(SvgIcons.CAMERA, 18, "#1a2e1a"));
+        Span titleSpan = new Span(title != null ? title : "Ambil Foto");
         titleSpan.getStyle().set("font-size", "16px").set("font-weight", "800").set("color", "#1a2e1a");
-        Button closeTopBtn = new Button("✕", ev -> cameraDialog.close());
-        closeTopBtn.getStyle().set("background", "transparent").set("color", "#8fb08a").set("border", "none").set("font-size", "18px").set("cursor", "pointer");
-        header.add(titleSpan, closeTopBtn);
+        titleWrap.add(titleSpan);
+        
+        Button closeTopBtn = new Button();
+        SvgIcons.attachIcon(closeTopBtn, SvgIcons.X, 16, "#8fb08a");
+        closeTopBtn.getStyle().set("background", "transparent").set("color", "#8fb08a").set("border", "none").set("cursor", "pointer")
+                .set("display", "flex").set("align-items", "center").set("justify-content", "center").set("padding", "4px");
+        closeTopBtn.addClickListener(ev -> cameraDialog.close());
+        header.add(titleWrap, closeTopBtn);
 
         // Camera viewport box
         Div viewportBox = new Div();
@@ -1732,28 +1754,34 @@ public class UserDashboardView extends Div {
         Div buttonRow = new Div();
         buttonRow.getStyle().set("display", "flex").set("gap", "10px").set("width", "100%");
 
-        Button snapBtn = new Button("📸 Ambil Foto");
+        Button snapBtn = new Button();
         snapBtn.getStyle()
                 .set("flex", "1").set("height", "44px")
                 .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
                 .set("color", "white").set("border", "none").set("border-radius", "10px")
-                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px");
+        SvgIcons.attachIconAndText(snapBtn, "Ambil Foto", SvgIcons.CAMERA, 16, "white", true);
 
-        Button retakeBtn = new Button("🔄 Foto Ulang");
+        Button retakeBtn = new Button();
         retakeBtn.setVisible(false);
         retakeBtn.getStyle()
                 .set("flex", "1").set("height", "44px")
                 .set("background", "#f0f4f0").set("color", "#4a6a4a")
                 .set("border", "1px solid #c8d6c8").set("border-radius", "10px")
-                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px");
+        SvgIcons.attachIconAndText(retakeBtn, "Foto Ulang", SvgIcons.ROTATE_CCW, 15, "#4a6a4a", true);
 
-        Button usePhotoBtn = new Button("✅ Gunakan Foto Ini");
+        Button usePhotoBtn = new Button();
         usePhotoBtn.setVisible(false);
         usePhotoBtn.getStyle()
                 .set("flex", "1").set("height", "44px")
                 .set("background", "linear-gradient(135deg,#2e7d32,#1b5e20)")
                 .set("color", "white").set("border", "none").set("border-radius", "10px")
-                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer");
+                .set("font-weight", "700").set("font-size", "13px").set("cursor", "pointer")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px");
+        SvgIcons.attachIconAndText(usePhotoBtn, "Gunakan Foto Ini", SvgIcons.CHECK_CIRCLE, 16, "white", true);
 
         snapBtn.addClickListener(e -> {
             String snapJs =
@@ -1851,7 +1879,7 @@ public class UserDashboardView extends Div {
     }
 
     /**
-     * Builds a photo input card containing both "📸 Buka Kamera Langsung" and "📁 Pilih File dari Galeri/Dokumen",
+     * Builds a photo input card containing both camera and gallery options,
      * along with an instant visual preview card.
      */
     private Div buildPhotoUploadSection(
@@ -1878,7 +1906,7 @@ public class UserDashboardView extends Div {
                 .set("gap", "8px");
 
         // Camera Button
-        Button openCamBtn = new Button("📸  Buka Kamera Langsung");
+        Button openCamBtn = new Button();
         openCamBtn.setWidthFull();
         openCamBtn.getStyle()
                 .set("height", "46px")
@@ -1889,8 +1917,13 @@ public class UserDashboardView extends Div {
                 .set("font-weight", "700")
                 .set("font-size", "13px")
                 .set("font-family", "'Inter', sans-serif")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px")
                 .set("cursor", "pointer")
                 .set("box-shadow", "0 2px 8px rgba(77,143,77,0.25)");
+        SvgIcons.attachIconAndText(openCamBtn, "Buka Kamera Langsung", SvgIcons.CAMERA, 16, "white", true);
 
         // "ATAU" divider text
         Div orDiv = new Div();
@@ -1905,7 +1938,7 @@ public class UserDashboardView extends Div {
         upload.setAcceptedFileTypes("image/*");
         upload.setMaxFiles(1);
         upload.setMaxFileSize(10 * 1024 * 1024);
-        upload.setUploadButton(buildUserUploadButton("📁  Pilih File dari Galeri / Dokumen"));
+        upload.setUploadButton(buildUserUploadButton("Pilih File dari Galeri / Dokumen", SvgIcons.FOLDER_OPEN));
         upload.setDropLabel(new Span("JPG, PNG, HEIC · Max 10MB"));
         upload.setWidthFull();
 
@@ -1930,24 +1963,32 @@ public class UserDashboardView extends Div {
 
         Div infoDiv = new Div();
         infoDiv.getStyle().set("flex", "1").set("min-width", "0");
-        Span statusBadge = new Span("✅ Foto Siap Digunakan");
-        statusBadge.getStyle().set("font-size", "12px").set("font-weight", "700").set("color", "#2e7d32").set("display", "block");
+        Div statusBadgeWrap = new Div();
+        statusBadgeWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "5px");
+        Div statusBadgeIcon = SvgIcons.createIcon(SvgIcons.CHECK_CIRCLE, 14, "#2e7d32");
+        Span statusBadge = new Span("Foto Siap Digunakan");
+        statusBadge.getStyle().set("font-size", "12px").set("font-weight", "700").set("color", "#2e7d32");
+        statusBadgeWrap.add(statusBadgeIcon, statusBadge);
+
         Span fileNameSpan = new Span("");
         fileNameSpan.getStyle().set("font-size", "11px").set("color", "#6b8a6b").set("display", "block")
-                .set("white-space", "nowrap").set("overflow", "hidden").set("text-overflow", "ellipsis");
-        infoDiv.add(statusBadge, fileNameSpan);
+                .set("white-space", "nowrap").set("overflow", "hidden").set("text-overflow", "ellipsis").set("margin-top", "2px");
+        infoDiv.add(statusBadgeWrap, fileNameSpan);
 
-        Button removeBtn = new Button("🗑️ Ganti", ev -> {
+        Button removeBtn = new Button();
+        removeBtn.getStyle()
+                .set("background", "#ffebee").set("color", "#c62828")
+                .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
+                .set("font-size", "11px").set("font-weight", "700")
+                .set("display", "inline-flex").set("align-items", "center").set("gap", "4px")
+                .set("height", "32px").set("cursor", "pointer");
+        SvgIcons.attachIconAndText(removeBtn, "Ganti", SvgIcons.REFRESH_CW, 12, "#c62828", true);
+        removeBtn.addClickListener(ev -> {
             finalSavedFoto[0] = null;
             uploadedRawFileName[0] = null;
             previewBox.getStyle().set("display", "none");
             choicesContainer.getStyle().set("display", "flex");
         });
-        removeBtn.getStyle()
-                .set("background", "#ffebee").set("color", "#c62828")
-                .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
-                .set("font-size", "11px").set("font-weight", "700")
-                .set("height", "32px").set("cursor", "pointer");
 
         previewBox.add(thumbImg, infoDiv, removeBtn);
 
@@ -1957,7 +1998,7 @@ public class UserDashboardView extends Div {
                 finalSavedFoto[0] = savedName;
                 uploadedRawFileName[0] = null;
                 thumbImg.setSrc("images/" + savedName);
-                statusBadge.setText("📸 Foto Kamera Siap Digunakan");
+                statusBadge.setText("Foto Kamera Siap Digunakan");
                 fileNameSpan.setText(savedName);
                 previewBox.getStyle().set("display", "flex");
                 choicesContainer.getStyle().set("display", "none");
@@ -1968,7 +2009,7 @@ public class UserDashboardView extends Div {
         upload.addSucceededListener(ev -> {
             uploadedRawFileName[0] = ev.getFileName();
             finalSavedFoto[0] = null;
-            statusBadge.setText("📁 File Upload Siap Digunakan");
+            statusBadge.setText("File Upload Siap Digunakan");
             fileNameSpan.setText(ev.getFileName());
             thumbImg.setSrc("images/logo.png");
             previewBox.getStyle().set("display", "flex");
@@ -2136,13 +2177,15 @@ public class UserDashboardView extends Div {
             switchTab(activeTab);
         });
 
-        Button logoutBtn = new Button("🚪 Logout");
+        Button logoutBtn = new Button();
         logoutBtn.setWidthFull();
         logoutBtn.getStyle()
                 .set("background", "rgba(224,106,106,0.15)")
                 .set("color", "#e06a6a").set("border", "1px solid rgba(224,106,106,0.3)")
                 .set("font-weight", "700").set("border-radius", "10px")
+                .set("display", "flex").set("align-items", "center").set("justify-content", "center").set("gap", "8px")
                 .set("height", "44px").set("cursor", "pointer");
+        SvgIcons.attachIconAndText(logoutBtn, "Logout", SvgIcons.LOGOUT, 16, "#e06a6a", true);
 
         logoutBtn.addClickListener(ev -> {
             Dialog confirmDialog = new Dialog();
@@ -2153,10 +2196,14 @@ public class UserDashboardView extends Div {
                     .set("display", "flex").set("flex-direction", "column")
                     .set("gap", "14px").set("padding", "16px 20px");
 
-            Span cTitle = new Span("\ud83d\udeaa Konfirmasi Logout");
+            Div cTitleWrap = new Div();
+            cTitleWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+            cTitleWrap.add(SvgIcons.createIcon(SvgIcons.LOGOUT, 18, "#c62828"));
+            Span cTitle = new Span("Konfirmasi Logout");
             cTitle.getStyle()
                     .set("font-family", "'Inter',sans-serif").set("font-size", "16px")
                     .set("font-weight", "700").set("color", "#1a2e1a");
+            cTitleWrap.add(cTitle);
 
             Span cMsg = new Span("Yakin mau keluar dari sesi ini?");
             cMsg.getStyle()
@@ -2189,7 +2236,7 @@ public class UserDashboardView extends Div {
             });
 
             cBtns.add(cCancel, cYes);
-            cContent.add(cTitle, cMsg, cBtns);
+            cContent.add(cTitleWrap, cMsg, cBtns);
             confirmDialog.add(cContent);
             confirmDialog.open();
         });
@@ -2240,7 +2287,7 @@ public class UserDashboardView extends Div {
                 .set("padding", "18px 22px 16px")
                 .set("border-radius", "20px 20px 0 0");
 
-        Span headerTitle = new Span("📋  Ajukan Booking Barang");
+        Span headerTitle = new Span("Ajukan Booking Barang");
         headerTitle.getStyle().set("color", "white").set("font-size", "17px").set("font-weight", "800").set("display", "block");
 
         Span headerSub = new Span("Reservasi barang untuk diambil di waktu mendatang. Membutuhkan persetujuan admin.");
@@ -2317,8 +2364,8 @@ public class UserDashboardView extends Div {
                 .set("background", "#fff8e1").set("border", "1px solid #ffe082")
                 .set("border-radius", "10px").set("padding", "10px 14px").set("margin-top", "14px")
                 .set("display", "flex").set("gap", "8px").set("align-items", "flex-start");
-        Span noteIcon = new Span("ℹ️");
-        noteIcon.getStyle().set("flex-shrink", "0").set("font-size", "14px");
+        Div noteIcon = SvgIcons.createIcon(SvgIcons.INFO, 15, "#b78103");
+        noteIcon.getStyle().set("flex-shrink", "0").set("margin-top", "2px");
         Span noteText = new Span("Booking Anda akan mengunci barang sementara agar tidak dipinjam pengguna lain, dan perlu disetujui oleh admin terlebih dahulu.");
         noteText.getStyle().set("color", "#b78103").set("font-size", "12px").set("line-height", "1.5").set("font-weight", "500");
         noteBox.add(noteIcon, noteText);
@@ -2338,25 +2385,27 @@ public class UserDashboardView extends Div {
                 .set("border-radius", "10px").set("height", "44px").set("cursor", "pointer")
                 .set("font-weight", "600");
 
-        Button submitBtn = new Button("🔖  Ajukan Booking", ev -> {
+        Button submitBtn = new Button();
+        submitBtn.getStyle()
+                .set("flex", "2").set("border", "none").set("border-radius", "10px")
+                .set("height", "44px").set("cursor", "pointer").set("font-weight", "700")
+                .set("font-size", "13px").set("font-family", "'Inter', sans-serif")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)").set("color", "white");
+        SvgIcons.attachIconAndText(submitBtn, "Ajukan Booking", SvgIcons.BOOKMARK, 15, "white", true);
+
+        submitBtn.addClickListener(ev -> {
+            if (catatanArea.getValue().isBlank()) {
+                err("Harap isi catatan / keperluan booking!");
+                return;
+            }
+            LocalDate tglAmbil = tglAmbilPicker.getValue();
+            LocalTime jamAmbil = jamAmbilPicker.getValue() != null ? jamAmbilPicker.getValue() : LocalTime.of(8, 0);
+            LocalDateTime rencanaAmbil = LocalDateTime.of(tglAmbil, jamAmbil);
+
             try {
-                if (ruanganBox.getValue() == null) {
-                    err("Pilih ruang pemakaian terlebih dahulu!");
-                    return;
-                }
-                LocalDate dateVal = tglAmbilPicker.getValue();
-                LocalTime timeVal = jamAmbilPicker.getValue() != null ? jamAmbilPicker.getValue() : LocalTime.of(8, 0);
-                if (dateVal == null) {
-                    err("Pilih tanggal rencana ambil!");
-                    return;
-                }
-                if (catatanArea.getValue() == null || catatanArea.getValue().isBlank()) {
-                    err("Tuliskan keperluan / catatan booking!");
-                    return;
-                }
-                LocalDateTime tglJamAmbil = LocalDateTime.of(dateVal, timeVal);
-                bookingService.createBooking(currentUser, b, ruanganBox.getValue(), tglJamAmbil, catatanArea.getValue());
-                ok("✅  Booking berhasil diajukan! Menunggu konfirmasi admin.");
+                bookingService.createBooking(currentUser, b, ruanganBox.getValue(), rencanaAmbil, catatanArea.getValue().trim());
+                ok("Booking berhasil diajukan! Menunggu konfirmasi admin.");
                 d.close();
                 switchTab("mybooking");
             } catch (Exception ex) {
@@ -2404,8 +2453,8 @@ public class UserDashboardView extends Div {
                     .set("padding", "48px 20px").set("text-align", "center")
                     .set("box-shadow", "0 2px 10px rgba(0,0,0,0.04)")
                     .set("border", "1px solid rgba(0,0,0,0.06)");
-            Span emptyIcon = new Span("🔖");
-            emptyIcon.getStyle().set("font-size", "36px").set("display", "block").set("margin-bottom", "10px");
+            Div emptyIcon = SvgIcons.createIcon(SvgIcons.BOOKMARK, 36, "#8fb08a");
+            emptyIcon.getStyle().set("margin-bottom", "10px");
             Span emptyTxt = new Span("Belum ada riwayat booking.");
             emptyTxt.getStyle().set("color", "#1a2e1a").set("font-size", "14px").set("font-weight", "700").set("display", "block");
             Span emptySub = new Span("Pilih barang dari Dashboard lalu klik tombol 'Booking' untuk mereservasi barang.");
@@ -2433,47 +2482,16 @@ public class UserDashboardView extends Div {
                 Span itemName = new Span(namaB);
                 itemName.getStyle().set("color", "#1a2e1a").set("font-size", "15px").set("font-weight", "800");
 
-                String stText;
-                String stBg;
-                String stColor;
-                String stBorder;
-
+                Div stBadge;
                 switch (bk.getStatus()) {
-                    case menunggu_persetujuan -> {
-                        stText = "⏳ MENUNGGU ACC";
-                        stBg = "#fff3e0"; stColor = "#e65100"; stBorder = "#ffe0b2";
-                    }
-                    case disetujui -> {
-                        stText = "✅ DISETUJUI (SIAP DIAMBIL)";
-                        stBg = "#e8f5e9"; stColor = "#2e7d32"; stBorder = "#a5d6a7";
-                    }
-                    case diambil -> {
-                        stText = "📦 SUDAH DIAMBIL";
-                        stBg = "#e3f2fd"; stColor = "#1565c0"; stBorder = "#90caf9";
-                    }
-                    case ditolak -> {
-                        stText = "❌ DITOLAK";
-                        stBg = "#ffebee"; stColor = "#c62828"; stBorder = "#ef9a9a";
-                    }
-                    case dibatalkan -> {
-                        stText = "🚫 DIBATALKAN";
-                        stBg = "#f5f5f5"; stColor = "#616161"; stBorder = "#e0e0e0";
-                    }
-                    case kedaluwarsa -> {
-                        stText = "⏰ KEDALUWARSA";
-                        stBg = "#ffebee"; stColor = "#c62828"; stBorder = "#ef9a9a";
-                    }
-                    default -> {
-                        stText = "—"; stBg = "#f5f5f5"; stColor = "#616161"; stBorder = "#e0e0e0";
-                    }
+                    case menunggu_persetujuan -> stBadge = SvgIcons.createBadge("MENUNGGU ACC", SvgIcons.CLOCK, "#e65100", "#fff3e0", "#ffe0b2");
+                    case disetujui -> stBadge = SvgIcons.createBadge("DISETUJUI (SIAP DIAMBIL)", SvgIcons.CHECK_CIRCLE, "#2e7d32", "#e8f5e9", "#a5d6a7");
+                    case diambil -> stBadge = SvgIcons.createBadge("SUDAH DIAMBIL", SvgIcons.CLIPBOARD_CHECK, "#1565c0", "#e3f2fd", "#90caf9");
+                    case ditolak -> stBadge = SvgIcons.createBadge("DITOLAK", SvgIcons.X_CIRCLE, "#c62828", "#ffebee", "#ef9a9a");
+                    case dibatalkan -> stBadge = SvgIcons.createBadge("DIBATALKAN", SvgIcons.BAN, "#616161", "#f5f5f5", "#e0e0e0");
+                    case kedaluwarsa -> stBadge = SvgIcons.createBadge("KEDALUWARSA", SvgIcons.CLOCK, "#c62828", "#ffebee", "#ef9a9a");
+                    default -> stBadge = SvgIcons.createBadge("—", null, "#616161", "#f5f5f5", "#e0e0e0");
                 }
-
-                Span stBadge = new Span(stText);
-                stBadge.getStyle()
-                        .set("background", stBg).set("color", stColor)
-                        .set("font-size", "10px").set("font-weight", "700")
-                        .set("padding", "4px 10px").set("border-radius", "12px")
-                        .set("border", "1px solid " + stBorder);
 
                 topRow.add(itemName, stBadge);
                 card.add(topRow);
@@ -2546,12 +2564,15 @@ public class UserDashboardView extends Div {
                             .set("padding", "6px 16px").set("font-size", "12px").set("font-weight", "700").set("cursor", "pointer");
 
                     if (bk.getStatus() == Booking.BookingStatus.disetujui) {
-                        Button pinjamBtn = new Button("📦 Ambil & Pinjam", ev -> showFinalizeBookingDialog(bk));
+                        Button pinjamBtn = new Button();
                         pinjamBtn.getStyle()
                                 .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)")
                                 .set("color", "white").set("border", "none").set("border-radius", "8px")
                                 .set("padding", "6px 16px").set("font-weight", "700").set("font-size", "12px")
+                                .set("display", "inline-flex").set("align-items", "center").set("gap", "6px")
                                 .set("cursor", "pointer");
+                        SvgIcons.attachIconAndText(pinjamBtn, "Ambil & Pinjam", SvgIcons.PACKAGE, 14, "white", true);
+                        pinjamBtn.addClickListener(ev -> showFinalizeBookingDialog(bk));
 
                         actionRow.add(cancelBtn, pinjamBtn);
                     } else {
@@ -2588,7 +2609,7 @@ public class UserDashboardView extends Div {
                 .set("padding", "16px 22px 14px")
                 .set("border-radius", "20px 20px 0 0");
 
-        Span headerTitle = new Span("📦 Konfirmasi Pengambilan");
+        Span headerTitle = new Span("Konfirmasi Pengambilan");
         headerTitle.getStyle().set("color", "white").set("font-size", "16px").set("font-weight", "800").set("display", "block");
 
         Span headerSub = new Span("Booking disetujui admin. Lengkapi data untuk mengambil barang.");
@@ -2667,7 +2688,16 @@ public class UserDashboardView extends Div {
                 .set("font-weight", "600").set("font-family", "'Inter', sans-serif")
                 .set("font-size", "13px");
 
-        Button submitBtn = new Button("📦 Pinjam Sekarang", ev -> {
+        Button submitBtn = new Button();
+        submitBtn.getStyle()
+                .set("flex", "2").set("border", "none").set("border-radius", "10px")
+                .set("height", "44px").set("cursor", "pointer").set("font-weight", "800")
+                .set("font-size", "13px").set("font-family", "'Inter', sans-serif")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)").set("color", "white");
+        SvgIcons.attachIconAndText(submitBtn, "Pinjam Sekarang", SvgIcons.PACKAGE, 15, "white", true);
+
+        submitBtn.addClickListener(ev -> {
             if (tglKembaliPicker.getValue() == null) {
                 err("Pilih tanggal rencana kembali!");
                 return;
@@ -2706,11 +2736,6 @@ public class UserDashboardView extends Div {
                 err(ex.getMessage());
             }
         });
-        submitBtn.getStyle()
-                .set("flex", "2").set("border", "none").set("border-radius", "10px")
-                .set("height", "44px").set("cursor", "pointer").set("font-weight", "800")
-                .set("font-size", "13px").set("font-family", "'Inter', sans-serif")
-                .set("background", "linear-gradient(135deg,#4d8f4d,#2d6a2d)").set("color", "white");
 
         footer.add(cancelBtn, submitBtn);
         layout.add(headerBar, formBody, footer);
@@ -2740,6 +2765,15 @@ public class UserDashboardView extends Div {
             "</svg>", size, size);
     }
 
+
+    private void setBannerError(Div banner, String message) {
+        banner.removeAll();
+        banner.add(SvgIcons.createIcon(SvgIcons.ALERT_TRIANGLE, 16, "#c62828"));
+        Span text = new Span(message);
+        text.getStyle().set("font-size", "12px").set("font-weight", "600").set("color", "#c62828");
+        banner.add(text);
+        banner.getStyle().set("display", "flex");
+    }
 
     private static final String IC_HOME =
         "<path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/><polyline points='9 22 9 12 15 12 15 22'/>";

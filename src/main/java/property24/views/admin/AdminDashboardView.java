@@ -32,6 +32,7 @@ import property24.service.PinjamanService;
 import property24.service.UserService;
 import property24.util.AuthSession;
 import property24.util.FileUploadHelper;
+import property24.util.SvgIcons;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -283,10 +284,14 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("display", "flex").set("flex-direction", "column")
                     .set("gap", "14px").set("padding", "16px 20px");
 
-            Span title = new Span("🚪 Konfirmasi Logout");
-            title.getStyle()
+            Div title = new Div();
+            title.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+            title.add(SvgIcons.createIcon(SvgIcons.LOGOUT, 18, "#c62828"));
+            Span titleSpan = new Span("Konfirmasi Logout");
+            titleSpan.getStyle()
                     .set("font-family", "'Inter',sans-serif").set("font-size", "16px")
                     .set("font-weight", "700").set("color", "#1a2e1a");
+            title.add(titleSpan);
 
             Span msg = new Span("Yakin mau keluar dari sesi ini?");
             msg.getStyle()
@@ -1328,8 +1333,8 @@ public class AdminDashboardView extends HorizontalLayout {
     }
 
     // ── UPLOAD BUTTON HELPER ──────────────────────────────────────────────────
-    private Button buildUploadButton(String label) {
-        Button btn = new Button(label);
+    private Button buildUploadButton(String label, String iconPath) {
+        Button btn = new Button();
         btn.getStyle()
                 .set("background", "rgba(77,143,77,0.15)")
                 .set("color", "#8fb08a")
@@ -1341,7 +1346,12 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("padding", "10px 20px")
                 .set("width", "100%")
                 .set("cursor", "pointer")
-                .set("height", "44px");
+                .set("height", "44px")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px");
+        SvgIcons.attachIconAndText(btn, label, iconPath, 16, "#8fb08a", true);
         return btn;
     }
 
@@ -1370,7 +1380,7 @@ public class AdminDashboardView extends HorizontalLayout {
         addUpload.setAcceptedFileTypes("image/*");
         addUpload.setMaxFiles(1);
         addUpload.setMaxFileSize(10 * 1024 * 1024);
-        addUpload.setUploadButton(buildUploadButton("📷  Pilih Foto Barang"));
+        addUpload.setUploadButton(buildUploadButton("Pilih Foto Barang", SvgIcons.CAMERA));
         addUpload.setDropLabel(new Span("atau drag & drop di sini"));
         addUpload.setWidthFull();
         addUpload.addSucceededListener(ev -> addFotoName[0] = ev.getFileName());
@@ -1502,7 +1512,7 @@ public class AdminDashboardView extends HorizontalLayout {
         editUpload.setAcceptedFileTypes("image/*");
         editUpload.setMaxFiles(1);
         editUpload.setMaxFileSize(10 * 1024 * 1024);
-        editUpload.setUploadButton(buildUploadButton(initialFoto.isEmpty() ? "📷  Pilih Foto Baru" : "📷  Ganti Foto"));
+        editUpload.setUploadButton(buildUploadButton(initialFoto.isEmpty() ? "Pilih Foto Baru" : "Ganti Foto", SvgIcons.CAMERA));
         editUpload.setDropLabel(new Span("atau drag & drop di sini"));
         editUpload.setWidthFull();
         editUpload.addSucceededListener(ev -> {
@@ -1510,8 +1520,12 @@ public class AdminDashboardView extends HorizontalLayout {
             // Live preview update
             previewWrap.removeAll();
             photoPreview.setSrc("data:image/png;base64,iVBORw0KGgo="); // placeholder flash
-            Span loaded = new Span("✅ Foto dipilih: " + ev.getFileName());
-            loaded.getStyle().set("color", "#8fb08a").set("font-size", "12px");
+            Div loaded = new Div();
+            loaded.getStyle().set("display", "flex").set("align-items", "center").set("gap", "6px");
+            loaded.add(SvgIcons.createIcon(SvgIcons.CHECK_CIRCLE, 14, "#8fb08a"));
+            Span loadedText = new Span("Foto dipilih: " + ev.getFileName());
+            loadedText.getStyle().set("color", "#8fb08a").set("font-size", "12px");
+            loaded.add(loadedText);
             previewWrap.add(loaded);
         });
 
@@ -2062,11 +2076,13 @@ public class AdminDashboardView extends HorizontalLayout {
                 roleCell.add(roleBox);
 
                 // Aksi: tombol hapus
-                Button deleteBtn = new Button("🗑");
+                Button deleteBtn = new Button();
+                SvgIcons.attachIcon(deleteBtn, SvgIcons.TRASH, 15, "#c62828");
                 deleteBtn.getStyle()
                         .set("background", "white").set("color", "#c62828")
                         .set("border", "1px solid #ef9a9a").set("border-radius", "8px")
-                        .set("cursor", "pointer").set("font-size", "14px")
+                        .set("cursor", "pointer")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center")
                         .set("width", "34px").set("height", "34px").set("padding", "0");
                 deleteBtn.getElement().setAttribute("title", "Hapus user ini");
 
@@ -2083,9 +2099,13 @@ public class AdminDashboardView extends HorizontalLayout {
                     dContent.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "14px")
                             .set("padding", "16px 20px");
 
-                    Span dTitle = new Span("⚠️ Hapus User?");
+                    Div dTitleWrap = new Div();
+                    dTitleWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+                    dTitleWrap.add(SvgIcons.createIcon(SvgIcons.ALERT_TRIANGLE, 18, "#c62828"));
+                    Span dTitle = new Span("Hapus User?");
                     dTitle.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "16px")
                             .set("font-weight", "700").set("color", "#c62828");
+                    dTitleWrap.add(dTitle);
 
                     Span dMsg = new Span("Akun \"" + u.getNamaLengkap() + "\" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.");
                     dMsg.getStyle().set("font-family", "'Inter',sans-serif").set("font-size", "13px")
@@ -2117,7 +2137,7 @@ public class AdminDashboardView extends HorizontalLayout {
                     });
 
                     dBtns.add(cancelBtn, yesBtn);
-                    dContent.add(dTitle, dMsg, dBtns);
+                    dContent.add(dTitleWrap, dMsg, dBtns);
                     confirm.add(dContent);
                     confirm.open();
                 });
@@ -2321,9 +2341,7 @@ public class AdminDashboardView extends HorizontalLayout {
             img.getStyle().set("width", "100%").set("height", "100%").set("object-fit", "cover");
             thumb.add(img);
         } else {
-            Span ic = new Span("📦");
-            ic.getStyle().set("font-size", "22px");
-            thumb.add(ic);
+            thumb.add(SvgIcons.createIcon(SvgIcons.BOX, 22, "#6a8a6a"));
         }
 
         Div info = new Div();
@@ -2373,21 +2391,21 @@ public class AdminDashboardView extends HorizontalLayout {
 
         // Borrower
         String borrowerName = borrower != null ? borrower.getNamaLengkap() : "—";
-        meta.add(metaItem("👤 Peminjam", borrowerName));
+        meta.add(metaItem("Peminjam", borrowerName, SvgIcons.USER));
 
         // Location
         String ruanganStr = d.getRuangan() != null ? d.getRuangan().getNamaRuangan() : "—";
-        meta.add(metaItem("📍 Lokasi", ruanganStr));
+        meta.add(metaItem("Lokasi", ruanganStr, SvgIcons.MAP_PIN));
 
         // Borrow date
         String borrowDate = d.getPinjaman() != null && d.getPinjaman().getTglPinjam() != null
                 ? d.getPinjaman().getTglPinjam().format(DateTimeFormatter.ofPattern("d MMM yyyy")) : "—";
-        meta.add(metaItem("📅 Tgl Pinjam", borrowDate));
+        meta.add(metaItem("Tgl Pinjam", borrowDate, SvgIcons.CALENDAR));
 
         // Due date (highlight red if overdue)
         String dueDate = d.getTglRencanaKembali() != null
                 ? d.getTglRencanaKembali().format(DateTimeFormatter.ofPattern("d MMM yyyy")) : "—";
-        Div dueMeta = metaItem("⏰ Jatuh Tempo", dueDate);
+        Div dueMeta = metaItem("Jatuh Tempo", dueDate, SvgIcons.CLOCK);
         if (isOverdue && !isReturned) {
             dueMeta.getChildren()
                     .filter(c -> c instanceof Span)
@@ -2398,7 +2416,7 @@ public class AdminDashboardView extends HorizontalLayout {
 
         // Tujuan pinjam
         if (d.getTujuanPinjam() != null && !d.getTujuanPinjam().isBlank()) {
-            Div tujuanItem = metaItem("📝 Tujuan", d.getTujuanPinjam());
+            Div tujuanItem = metaItem("Tujuan", d.getTujuanPinjam(), SvgIcons.FILE_TEXT);
             tujuanItem.getStyle().set("grid-column", "1 / -1");
             meta.add(tujuanItem);
         }
@@ -2412,8 +2430,10 @@ public class AdminDashboardView extends HorizontalLayout {
                 Div noteBox = new Div();
                 noteBox.getStyle()
                         .set("background", "#ffebee").set("border", "1px solid #ef9a9a")
-                        .set("border-radius", "8px").set("padding", "8px 12px");
-                Span noteSpan = new Span("❌ Alasan tolak: " + note);
+                        .set("border-radius", "8px").set("padding", "8px 12px")
+                        .set("display", "flex").set("align-items", "center").set("gap", "6px");
+                noteBox.add(SvgIcons.createIcon(SvgIcons.ALERT_CIRCLE, 14, "#c62828"));
+                Span noteSpan = new Span("Alasan tolak: " + note);
                 noteSpan.getStyle().set("font-size", "11px").set("color", "#c62828")
                         .set("font-family", "'Inter',sans-serif");
                 noteBox.add(noteSpan);
@@ -2424,19 +2444,27 @@ public class AdminDashboardView extends HorizontalLayout {
         return card;
     }
 
-    private Div metaItem(String label, String value) {
+    private Div metaItem(String label, String value, String iconPath) {
         Div item = new Div();
         item.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "2px");
+        
+        Div lblRow = new Div();
+        lblRow.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "4px");
+        if (iconPath != null) {
+            lblRow.add(SvgIcons.createIcon(iconPath, 11, "#8fb08a"));
+        }
         Span labelSpan = new Span(label);
         labelSpan.getStyle()
                 .set("font-size", "10px").set("color", "#8fb08a")
                 .set("font-weight", "600").set("font-family", "'Inter',sans-serif");
+        lblRow.add(labelSpan);
+
         Span valueSpan = new Span(value);
         valueSpan.getStyle()
                 .set("font-size", "12px").set("color", "#1a2e1a")
                 .set("font-weight", "500").set("font-family", "'Inter',sans-serif")
                 .set("overflow", "hidden").set("text-overflow", "ellipsis").set("white-space", "nowrap");
-        item.add(labelSpan, valueSpan);
+        item.add(lblRow, valueSpan);
         return item;
     }
 
@@ -2576,31 +2604,19 @@ public class AdminDashboardView extends HorizontalLayout {
         Div topRow = new Div();
         topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
 
-        Span statusBadge = new Span();
-        String statusLabel;
-        String statusBg;
-        String statusColor;
+        Div statusBadge;
         switch (p.getStatusAcc()) {
-            case approved -> { statusLabel = "✔ Disetujui"; statusBg = "#e8f5e9"; statusColor = "#2e7d32"; }
-            case rejected -> { statusLabel = "✘ Ditolak"; statusBg = "#ffebee"; statusColor = "#c62828"; }
-            default       -> { statusLabel = "⏳ Pending"; statusBg = "#fff8e1"; statusColor = "#e65100"; }
+            case approved -> statusBadge = SvgIcons.createBadge("Disetujui", SvgIcons.CHECK_CIRCLE, "#2e7d32", "#e8f5e9", "#a5d6a7");
+            case rejected -> statusBadge = SvgIcons.createBadge("Ditolak", SvgIcons.X_CIRCLE, "#c62828", "#ffebee", "#ef9a9a");
+            default       -> statusBadge = SvgIcons.createBadge("Pending", SvgIcons.CLOCK, "#e65100", "#fff8e1", "#ffe082");
         }
-        statusBadge.setText(statusLabel);
-        statusBadge.getStyle()
-                .set("background", statusBg).set("color", statusColor)
-                .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
-                .set("font-weight", "700").set("padding", "4px 12px")
-                .set("border-radius", "20px");
 
         boolean isDamageReport = p.getCatatanKondisi() != null && p.getCatatanKondisi().contains("[LAPORAN KERUSAKAN USER]");
         if (isDamageReport) {
-            Span dmgBadge = new Span("⚠️ LAPORAN KERUSAKAN USER");
-            dmgBadge.getStyle()
-                    .set("background", "#ffebee").set("color", "#c62828")
-                    .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
-                    .set("font-weight", "700").set("padding", "4px 12px")
-                    .set("border-radius", "20px");
-            topRow.add(dmgBadge);
+            Div dmgBadge = SvgIcons.createBadge("LAPORAN KERUSAKAN USER", SvgIcons.ALERT_TRIANGLE, "#c62828", "#ffebee", "#ef9a9a");
+            topRow.add(statusBadge, dmgBadge);
+        } else {
+            topRow.add(statusBadge);
         }
 
         Span idSpan = new Span("ID Pengembalian #" + p.getId());
@@ -2608,7 +2624,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
                 .set("color", "#9aaa9a").set("margin-left", "auto");
 
-        topRow.add(statusBadge, idSpan);
+        topRow.add(idSpan);
         card.add(topRow);
 
         // ── Details grid ─────────────────────────────────────────────────
@@ -2621,34 +2637,34 @@ public class AdminDashboardView extends HorizontalLayout {
         // Borrower info
         String borrowerName = borrower != null ? borrower.getNamaLengkap() : "-";
         String borrowerClass = borrower != null && borrower.getKelas() != null ? borrower.getKelas() : "-";
-        grid.add(detailField("👤 Peminjam", borrowerName + " (" + borrowerClass + ")"));
+        grid.add(detailField("Peminjam", borrowerName + " (" + borrowerClass + ")", SvgIcons.USER));
 
         // Barang info
         String barangName = barang != null ? barang.getNamaBarang() : "-";
         String barangCode = barang != null && barang.getKodeBarang() != null ? " [" + barang.getKodeBarang() + "]" : "";
-        grid.add(detailField("📦 Barang", barangName + barangCode));
+        grid.add(detailField("Barang", barangName + barangCode, SvgIcons.PACKAGE));
 
         // Ruangan pemakaian - stored in PinjamanDetail
         String ruangan = detail != null && detail.getRuangan() != null
                 ? detail.getRuangan().getNamaRuangan() : "-";
-        grid.add(detailField("🏫 Ruangan Pemakaian", ruangan));
+        grid.add(detailField("Ruangan Pemakaian", ruangan, SvgIcons.BUILDING));
 
         // Tujuan peminjaman - stored in PinjamanDetail
         String tujuan = detail != null && detail.getTujuanPinjam() != null
                 ? detail.getTujuanPinjam() : "-";
-        grid.add(detailField("📋 Tujuan", tujuan));
+        grid.add(detailField("Tujuan", tujuan, SvgIcons.FILE_TEXT));
 
         // Catatan kondisi user
         if (p.getCatatanKondisi() != null && !p.getCatatanKondisi().isBlank()) {
-            grid.add(detailField("💬 Catatan Kondisi User", p.getCatatanKondisi()));
+            grid.add(detailField("Catatan Kondisi User", p.getCatatanKondisi(), SvgIcons.MESSAGE_SQUARE));
         }
 
         // Admin yang menyetujui
         if (p.getAdminAcc() != null) {
-            grid.add(detailField("👨‍💼 Di-review oleh", p.getAdminAcc().getNamaLengkap()));
+            grid.add(detailField("Di-review oleh", p.getAdminAcc().getNamaLengkap(), SvgIcons.USER_CHECK));
         }
         if (p.getCatatanAdmin() != null && !p.getCatatanAdmin().isBlank()) {
-            grid.add(detailField("📝 Catatan Admin", p.getCatatanAdmin()));
+            grid.add(detailField("Catatan Admin", p.getCatatanAdmin(), SvgIcons.EDIT));
         }
 
         card.add(grid);
@@ -2661,11 +2677,16 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("border-radius", "12px")
                     .set("padding", "14px")
                     .set("border", "1px solid rgba(77,143,77,0.15)");
-            Span fotoLabel = new Span("📸 Foto Bukti Pengembalian / Kerusakan:");
+            Div fotoLabel = new Div();
             fotoLabel.getStyle()
-                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
-                    .set("font-weight", "600").set("color", "#4d6a4d").set("display", "block")
+                    .set("display", "inline-flex").set("align-items", "center").set("gap", "6px")
                     .set("margin-bottom", "10px");
+            fotoLabel.add(SvgIcons.createIcon(SvgIcons.CAMERA, 14, "#4d6a4d"));
+            Span fotoLabelText = new Span("Foto Bukti Pengembalian / Kerusakan:");
+            fotoLabelText.getStyle()
+                    .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
+                    .set("font-weight", "600").set("color", "#4d6a4d");
+            fotoLabel.add(fotoLabelText);
 
             String fotoVal = p.getFotoPengembalian() != null ? p.getFotoPengembalian().trim() : "";
             String imgSrc = fotoVal.startsWith("/") ? fotoVal : (fotoVal.startsWith("images/") ? "/" + fotoVal : "/images/" + fotoVal);
@@ -2698,8 +2719,9 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("background", "#fff8f0").set("border-radius", "10px")
                     .set("padding", "10px 14px").set("border", "1px solid #f0c090")
                     .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
-                    .set("color", "#a0601a");
-            noFoto.setText("⚠️ Tidak ada foto bukti yang diunggah.");
+                    .set("color", "#a0601a").set("display", "flex").set("align-items", "center").set("gap", "6px");
+            noFoto.add(SvgIcons.createIcon(SvgIcons.ALERT_CIRCLE, 14, "#a0601a"));
+            noFoto.add(new Span("Tidak ada foto bukti yang diunggah."));
             card.add(noFoto);
         }
 
@@ -2710,14 +2732,16 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("display", "flex").set("gap", "12px")
                     .set("margin-top", "4px").set("flex-wrap", "wrap");
 
-            Button approveBtn = new Button(isDamageReport ? "✔ Verifikasi & Process Retur" : "✔ Setujui Pengembalian");
+            Button approveBtn = new Button();
             approveBtn.getStyle()
                     .set("background", isDamageReport ? "linear-gradient(135deg, #e07a2a, #b35c17)" : "linear-gradient(135deg, #4d8f4d, #2d6a2d)")
                     .set("color", "white").set("font-weight", "700")
                     .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                     .set("border", "none").set("border-radius", "10px")
                     .set("padding", "0 20px").set("height", "42px").set("cursor", "pointer")
+                    .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "8px")
                     .set("flex", "1");
+            SvgIcons.attachIconAndText(approveBtn, isDamageReport ? "Verifikasi & Process Retur" : "Setujui Pengembalian", SvgIcons.CHECK_CIRCLE, 16, "white", true);
 
             approveBtn.addClickListener(e -> {
                 if (isDamageReport) {
@@ -2734,10 +2758,14 @@ public class AdminDashboardView extends HorizontalLayout {
                     vContent.setSpacing(false);
                     vContent.setPadding(false);
 
-                    Span vTitle = new Span("⚠️ Verifikasi Laporan Kerusakan");
+                    Div vTitleWrap = new Div();
+                    vTitleWrap.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+                    vTitleWrap.add(SvgIcons.createIcon(SvgIcons.ALERT_TRIANGLE, 18, "#c62828"));
+                    Span vTitle = new Span("Verifikasi Laporan Kerusakan");
                     vTitle.getStyle()
                             .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
-                            .set("font-weight", "800").set("color", "#c62828").set("display", "block");
+                            .set("font-weight", "800").set("color", "#c62828");
+                    vTitleWrap.add(vTitle);
                     Span vSub = new Span("Tentukan status barang " + (barang != null ? barang.getNamaBarang() : "") + " setelah pengembalian:");
                     vSub.getStyle()
                             .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
@@ -2817,7 +2845,7 @@ public class AdminDashboardView extends HorizontalLayout {
                     });
 
                     vBtns.add(vCancel, vConfirm);
-                    vContent.add(vTitle, vSub, actionBox, teknisiF, biayaF, vBtns);
+                    vContent.add(vTitleWrap, vSub, actionBox, teknisiF, biayaF, vBtns);
                     vDialog.add(vContent);
                     vDialog.open();
                 } else {
@@ -2825,12 +2853,20 @@ public class AdminDashboardView extends HorizontalLayout {
                     int pending = pinjamanService.getPendingPengembalian().size();
                     navApproveBadge.setText(String.valueOf(pending));
                     navApproveBadge.getStyle().set("display", pending > 0 ? "inline-block" : "none");
-                    ok("✔ Pengembalian #" + p.getId() + " berhasil disetujui!");
+                    ok("Pengembalian #" + p.getId() + " berhasil disetujui!");
                     refreshApproveCards(container, filter);
                 }
             });
 
-            Button rejectBtn = new Button("✘ Tolak");
+            Button rejectBtn = new Button();
+            rejectBtn.getStyle()
+                    .set("background", "white").set("color", "#c62828")
+                    .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
+                    .set("font-size", "13px").set("border", "1px solid #ef9a9a")
+                    .set("border-radius", "10px").set("padding", "0 20px")
+                    .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                    .set("height", "42px").set("cursor", "pointer");
+            SvgIcons.attachIconAndText(rejectBtn, "Tolak", SvgIcons.X, 14, "#c62828", true);
             rejectBtn.getStyle()
                     .set("background", "white").set("color", "#c62828")
                     .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
@@ -2897,18 +2933,28 @@ public class AdminDashboardView extends HorizontalLayout {
     }
 
     private Div detailField(String label, String value) {
+        return detailField(label, value, null);
+    }
+
+    private Div detailField(String label, String value, String iconPath) {
         Div d = new Div();
         d.getStyle().set("display", "flex").set("flex-direction", "column").set("gap", "2px");
+        Div lblRow = new Div();
+        lblRow.getStyle().set("display", "inline-flex").set("align-items", "center").set("gap", "4px");
+        if (iconPath != null) {
+            lblRow.add(SvgIcons.createIcon(iconPath, 12, "#8fb08a"));
+        }
         Span lbl = new Span(label);
         lbl.getStyle()
                 .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
                 .set("color", "#9aaa9a").set("font-weight", "600").set("text-transform", "uppercase")
                 .set("letter-spacing", "0.5px");
+        lblRow.add(lbl);
         Span val = new Span(value);
         val.getStyle()
                 .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                 .set("color", "#1a2e1a").set("font-weight", "500");
-        d.add(lbl, val);
+        d.add(lblRow, val);
         return d;
     }
 
@@ -3036,27 +3082,16 @@ public class AdminDashboardView extends HorizontalLayout {
             Div topRow = new Div();
             topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
 
-            Span statusBadge = new Span();
-            String stLabel;
-            String stBg;
-            String stColor;
-
+            Div statusBadge;
             switch (bk.getStatus()) {
-                case menunggu_persetujuan -> { stLabel = "⏳ MENUNGGU ACC ADMIN"; stBg = "#fff3e0"; stColor = "#e65100"; }
-                case disetujui -> { stLabel = "✅ DISETUJUI (SIAP DIAMBIL)"; stBg = "#e8f5e9"; stColor = "#2e7d32"; }
-                case diambil -> { stLabel = "📦 SUDAH DIAMBIL"; stBg = "#e3f2fd"; stColor = "#1565c0"; }
-                case ditolak -> { stLabel = "❌ DITOLAK"; stBg = "#ffebee"; stColor = "#c62828"; }
-                case dibatalkan -> { stLabel = "🚫 DIBATALKAN"; stBg = "#f5f5f5"; stColor = "#616161"; }
-                case kedaluwarsa -> { stLabel = "⏰ KEDALUWARSA"; stBg = "#ffebee"; stColor = "#c62828"; }
-                default -> { stLabel = "—"; stBg = "#f5f5f5"; stColor = "#616161"; }
+                case menunggu_persetujuan -> statusBadge = SvgIcons.createBadge("MENUNGGU ACC ADMIN", SvgIcons.CLOCK, "#e65100", "#fff3e0", "#ffe082");
+                case disetujui -> statusBadge = SvgIcons.createBadge("DISETUJUI (SIAP DIAMBIL)", SvgIcons.CHECK_CIRCLE, "#2e7d32", "#e8f5e9", "#a5d6a7");
+                case diambil -> statusBadge = SvgIcons.createBadge("SUDAH DIAMBIL", SvgIcons.CLIPBOARD_CHECK, "#1565c0", "#e3f2fd", "#90caf9");
+                case ditolak -> statusBadge = SvgIcons.createBadge("DITOLAK", SvgIcons.X_CIRCLE, "#c62828", "#ffebee", "#ef9a9a");
+                case dibatalkan -> statusBadge = SvgIcons.createBadge("DIBATALKAN", SvgIcons.BAN, "#616161", "#f5f5f5", "#e0e0e0");
+                case kedaluwarsa -> statusBadge = SvgIcons.createBadge("KEDALUWARSA", SvgIcons.CLOCK, "#c62828", "#ffebee", "#ef9a9a");
+                default -> statusBadge = SvgIcons.createBadge("—", null, "#616161", "#f5f5f5", "#e0e0e0");
             }
-
-            statusBadge.setText(stLabel);
-            statusBadge.getStyle()
-                    .set("background", stBg).set("color", stColor)
-                    .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
-                    .set("font-weight", "700").set("padding", "4px 12px")
-                    .set("border-radius", "20px");
 
             Span idSpan = new Span("ID Booking #" + bk.getId());
             idSpan.getStyle()
@@ -3075,27 +3110,27 @@ public class AdminDashboardView extends HorizontalLayout {
 
             User u = bk.getUser();
             String uName = u != null ? u.getNamaLengkap() + (u.getKelas() != null ? " (" + u.getKelas() + ")" : "") : "—";
-            grid.add(detailField("👤 Pemohon", uName));
+            grid.add(detailField("Pemohon", uName, SvgIcons.USER));
 
             Barang barang = bk.getBarang();
             String bName = barang != null ? barang.getNamaBarang() + (barang.getKodeBarang() != null ? " [" + barang.getKodeBarang() + "]" : "") : "—";
-            grid.add(detailField("📦 Barang", bName));
+            grid.add(detailField("Barang", bName, SvgIcons.PACKAGE));
 
             String ru = bk.getRuangan() != null ? bk.getRuangan().getNamaRuangan() :
                     (barang != null && barang.getRuangan() != null ? barang.getRuangan().getNamaRuangan() : "—");
-            grid.add(detailField("🏫 Ruang Pemakaian", ru));
+            grid.add(detailField("Ruang Pemakaian", ru, SvgIcons.BUILDING));
 
             String tglB = bk.getTglBooking() != null ? bk.getTglBooking().format(dtFmt) : "—";
-            grid.add(detailField("📅 Waktu Booking", tglB));
+            grid.add(detailField("Waktu Booking", tglB, SvgIcons.CALENDAR));
 
             String tglR = bk.getTglRencanaAmbil() != null ? bk.getTglRencanaAmbil().format(dtFmt) : "—";
-            grid.add(detailField("⏰ Rencana Ambil", tglR));
+            grid.add(detailField("Rencana Ambil", tglR, SvgIcons.CLOCK));
 
             String tglExp = bk.getBatasWaktu() != null ? bk.getBatasWaktu().format(dtFmt) : "—";
-            grid.add(detailField("⏳ Batas Waktu (Expiry)", tglExp));
+            grid.add(detailField("Batas Waktu (Expiry)", tglExp, SvgIcons.CLOCK));
 
             if (bk.getCatatan() != null && !bk.getCatatan().isBlank()) {
-                grid.add(detailField("📝 Catatan / Keperluan", bk.getCatatan()));
+                grid.add(detailField("Catatan / Keperluan", bk.getCatatan(), SvgIcons.FILE_TEXT));
             }
 
             card.add(grid);
@@ -3107,24 +3142,34 @@ public class AdminDashboardView extends HorizontalLayout {
                         .set("display", "flex").set("gap", "12px")
                         .set("margin-top", "6px").set("flex-wrap", "wrap");
 
-                Button approveBtn = new Button("✔ Setujui Booking (ACC)");
+                Button approveBtn = new Button();
                 approveBtn.getStyle()
                         .set("background", "linear-gradient(135deg, #3a9898, #287373)")
                         .set("color", "white").set("font-weight", "700")
                         .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                         .set("border", "none").set("border-radius", "10px")
                         .set("padding", "0 20px").set("height", "42px").set("cursor", "pointer")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "8px")
                         .set("flex", "1");
+                SvgIcons.attachIconAndText(approveBtn, "Setujui Booking (ACC)", SvgIcons.CHECK_CIRCLE, 16, "white", true);
                 approveBtn.addClickListener(e -> {
                     bookingService.approveBooking(bk, currentUser);
                     int activeCnt = (int) bookingService.getPendingBookingCount();
                     navBookingBadge.setText(String.valueOf(activeCnt));
                     navBookingBadge.getStyle().set("display", activeCnt > 0 ? "inline-block" : "none");
-                    ok("✔ Booking atas nama " + uName + " berhasil disetujui!");
+                    ok("Booking atas nama " + uName + " berhasil disetujui!");
                     refreshAdminBookingCards(container, filter);
                 });
 
-                Button rejectBtn = new Button("✘ Tolak");
+                Button rejectBtn = new Button();
+                rejectBtn.getStyle()
+                        .set("background", "white").set("color", "#c62828")
+                        .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
+                        .set("font-size", "13px").set("border", "1px solid #ef9a9a")
+                        .set("border-radius", "10px").set("padding", "0 20px")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                        .set("height", "42px").set("cursor", "pointer");
+                SvgIcons.attachIconAndText(rejectBtn, "Tolak", SvgIcons.X, 14, "#c62828", true);
                 rejectBtn.getStyle()
                         .set("background", "white").set("color", "#c62828")
                         .set("font-weight", "700").set("font-family", "'Inter', sans-serif")
@@ -3192,8 +3237,7 @@ public class AdminDashboardView extends HorizontalLayout {
                         .set("border-radius", "10px").set("padding", "10px 14px")
                         .set("display", "flex").set("gap", "10px").set("align-items", "flex-start")
                         .set("margin-top", "6px");
-                Span noteIcon = new Span("✅");
-                noteIcon.getStyle().set("font-size", "14px").set("flex-shrink", "0");
+                Div noteIcon = SvgIcons.createIcon(SvgIcons.CHECK_CIRCLE, 16, "#2e7d32");
                 Span noteText = new Span("Booking telah disetujui. User akan mengkonfirmasi pengambilan barang secara mandiri dari aplikasi mereka.");
                 noteText.getStyle()
                         .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
@@ -3301,19 +3345,22 @@ public class AdminDashboardView extends HorizontalLayout {
 
         Div titleLeft = new Div();
         titleLeft.getStyle().set("display", "flex").set("align-items", "center").set("gap", "10px");
-        Span titleTxt = new Span("🔧 Kerusakan & Perbaikan Barang");
+        titleLeft.add(SvgIcons.createIcon(SvgIcons.WRENCH, 22, "#4d8f4d"));
+        Span titleTxt = new Span("Kerusakan & Perbaikan Barang");
         titleTxt.getStyle()
                 .set("font-family", "'Inter', sans-serif").set("font-size", "22px")
                 .set("font-weight", "800").set("color", "#1a2e1a");
         titleLeft.add(titleTxt);
 
-        Button laporBtn = new Button("＋ Laporkan Kerusakan");
+        Button laporBtn = new Button();
         laporBtn.getStyle()
                 .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
                 .set("color", "white").set("border", "none").set("border-radius", "10px")
                 .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                 .set("font-weight", "700").set("height", "40px").set("padding", "0 20px")
+                .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
                 .set("cursor", "pointer");
+        SvgIcons.attachIconAndText(laporBtn, "Laporkan Kerusakan", SvgIcons.PLUS, 15, "white", true);
 
         titleRow.add(titleLeft, laporBtn);
         Span subTxt = new Span("Catat kerusakan barang, pantau proses perbaikan, dan tandai selesai.");
@@ -3323,7 +3370,7 @@ public class AdminDashboardView extends HorizontalLayout {
         root.add(header);
 
         // ── Filter Tabs ──────────────────────────────────────────────────────
-        String[] tabs    = {"📦 Barang Rusak (Gudang/Aset)", "Semua Perbaikan", "Sedang Proses", "Selesai", "Dibatalkan"};
+        String[] tabs    = {"Barang Rusak (Gudang/Aset)", "Semua Perbaikan", "Sedang Proses", "Selesai", "Dibatalkan"};
         String[] tabKeys = {"rusak_assets", "all", "proses", "selesai", "dibatalkan"};
         Div tabRow = new Div();
         tabRow.getStyle().set("display", "flex").set("gap", "8px")
@@ -3370,15 +3417,19 @@ public class AdminDashboardView extends HorizontalLayout {
             content.setPadding(false);
 
             Div hdr = new Div();
-            Span hdrTitle = new Span("🔧 Laporkan Kerusakan Barang");
+            Div hdrTitleRow = new Div();
+            hdrTitleRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "8px");
+            hdrTitleRow.add(SvgIcons.createIcon(SvgIcons.WRENCH, 18, "#b35c17"));
+            Span hdrTitle = new Span("Laporkan Kerusakan Barang");
             hdrTitle.getStyle()
                     .set("font-family", "'Inter', sans-serif").set("font-size", "16px")
-                    .set("font-weight", "800").set("color", "#b35c17").set("display", "block");
+                    .set("font-weight", "800").set("color", "#b35c17");
+            hdrTitleRow.add(hdrTitle);
             Span hdrSub = new Span("Pilih barang dan deskripsikan kerusakannya.");
             hdrSub.getStyle()
                     .set("font-family", "'Inter', sans-serif").set("font-size", "12px")
                     .set("color", "#6a7a6a").set("margin-top", "4px").set("display", "block");
-            hdr.add(hdrTitle, hdrSub);
+            hdr.add(hdrTitleRow, hdrSub);
 
             Hr hr = new Hr();
             hr.getStyle().set("border-color", "rgba(0,0,0,0.08)").set("margin", "12px 0");
@@ -3479,11 +3530,7 @@ public class AdminDashboardView extends HorizontalLayout {
                 Div topRow = new Div();
                 topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
 
-                Span badge = new Span("🛠 BARANG RUSAK (Tersimpan di Gudang)");
-                badge.getStyle()
-                        .set("background", "#ffebee").set("color", "#c62828")
-                        .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
-                        .set("font-weight", "700").set("padding", "4px 12px").set("border-radius", "20px");
+                Div badge = SvgIcons.createBadge("BARANG RUSAK (Tersimpan di Gudang)", SvgIcons.ALERT_TRIANGLE, "#c62828", "#ffebee", "#ef9a9a");
 
                 Span idSpan = new Span(b.getKodeBarang() != null ? b.getKodeBarang() : "ID #" + b.getId());
                 idSpan.getStyle()
@@ -3497,22 +3544,24 @@ public class AdminDashboardView extends HorizontalLayout {
                         .set("display", "grid").set("grid-template-columns", "1fr 1fr")
                         .set("gap", "10px 24px");
 
-                grid.add(detailField("📦 Nama Barang", b.getNamaBarang()));
-                grid.add(detailField("🏷 Kategori", b.getKategori() != null ? b.getKategori().getNamaKategori() : "-"));
-                grid.add(detailField("📍 Lokasi Ruangan", b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "-"));
-                grid.add(detailField("📊 Stock", b.getStock() + " unit"));
+                grid.add(detailField("Nama Barang", b.getNamaBarang(), SvgIcons.PACKAGE));
+                grid.add(detailField("Kategori", b.getKategori() != null ? b.getKategori().getNamaKategori() : "-", SvgIcons.TAG));
+                grid.add(detailField("Lokasi Ruangan", b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "-", SvgIcons.MAP_PIN));
+                grid.add(detailField("Stock", b.getStock() + " unit", SvgIcons.BAR_CHART));
                 card.add(grid);
 
                 Div actionRow = new Div();
                 actionRow.getStyle().set("display", "flex").set("gap", "10px").set("flex-wrap", "wrap");
 
-                Button masukanBengkelBtn = new Button("🔩 Masukkan ke Perbaikan");
+                Button masukanBengkelBtn = new Button();
                 masukanBengkelBtn.getStyle()
                         .set("background", "linear-gradient(135deg,#e07a2a,#b35c17)")
                         .set("color", "white").set("border", "none").set("border-radius", "10px")
                         .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
                         .set("font-weight", "700").set("height", "40px").set("padding", "0 18px")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
                         .set("cursor", "pointer").set("flex", "1");
+                SvgIcons.attachIconAndText(masukanBengkelBtn, "Masukkan ke Perbaikan", SvgIcons.WRENCH, 14, "white", true);
 
                 masukanBengkelBtn.addClickListener(ev -> {
                     Dialog d = new Dialog();
@@ -3575,7 +3624,15 @@ public class AdminDashboardView extends HorizontalLayout {
                     d.open();
                 });
 
-                Button pulihkanBtn = new Button("✅ Pulihkan ke Tersedia");
+                Button pulihkanBtn = new Button();
+                pulihkanBtn.getStyle()
+                        .set("background", "white").set("color", "#2e7d32")
+                        .set("border", "1px solid #a5d6a7").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 16px")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                        .set("cursor", "pointer");
+                SvgIcons.attachIconAndText(pulihkanBtn, "Pulihkan ke Tersedia", SvgIcons.ROTATE_CCW, 14, "#2e7d32", true);
                 pulihkanBtn.getStyle()
                         .set("background", "white").set("color", "#2e7d32")
                         .set("border", "1px solid #a5d6a7").set("border-radius", "10px")
@@ -3632,19 +3689,13 @@ public class AdminDashboardView extends HorizontalLayout {
             Div topRow = new Div();
             topRow.getStyle().set("display", "flex").set("align-items", "center").set("gap", "12px");
 
-            String stLabel; String stBg; String stColor;
+            Div badge;
             switch (rp.getStatusPerbaikan()) {
-                case proses     -> { stLabel = "🔧 SEDANG DIPROSES"; stBg = "#fff3e0"; stColor = "#e65100"; }
-                case selesai    -> { stLabel = "✅ SELESAI";         stBg = "#e8f5e9"; stColor = "#2e7d32"; }
-                case dibatalkan -> { stLabel = "🚫 DIBATALKAN";      stBg = "#f5f5f5"; stColor = "#616161"; }
-                default         -> { stLabel = "—";                  stBg = "#f5f5f5"; stColor = "#9e9e9e"; }
+                case proses     -> badge = SvgIcons.createBadge("SEDANG DIPROSES", SvgIcons.WRENCH, "#e65100", "#fff3e0", "#ffe082");
+                case selesai    -> badge = SvgIcons.createBadge("SELESAI", SvgIcons.CHECK_CIRCLE, "#2e7d32", "#e8f5e9", "#a5d6a7");
+                case dibatalkan -> badge = SvgIcons.createBadge("DIBATALKAN", SvgIcons.BAN, "#616161", "#f5f5f5", "#e0e0e0");
+                default         -> badge = SvgIcons.createBadge("—", null, "#9e9e9e", "#f5f5f5", "#e0e0e0");
             }
-
-            Span badge = new Span(stLabel);
-            badge.getStyle()
-                    .set("background", stBg).set("color", stColor)
-                    .set("font-family", "'Inter', sans-serif").set("font-size", "11px")
-                    .set("font-weight", "700").set("padding", "4px 12px").set("border-radius", "20px");
 
             Span idSpan = new Span("ID #" + rp.getId());
             idSpan.getStyle()
@@ -3660,22 +3711,22 @@ public class AdminDashboardView extends HorizontalLayout {
                     .set("gap", "10px 24px");
 
             Barang b = rp.getBarang();
-            grid.add(detailField("📦 Barang",
-                    b != null ? b.getNamaBarang() + (b.getKodeBarang() != null ? " [" + b.getKodeBarang() + "]" : "") : "—"));
-            grid.add(detailField("📍 Lokasi",
-                    b != null && b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "—"));
-            grid.add(detailField("👤 Dilaporkan Oleh",
-                    rp.getDilaporkanOleh() != null ? rp.getDilaporkanOleh().getNamaLengkap() : "—"));
-            grid.add(detailField("🗓 Tanggal Masuk",
-                    rp.getTglMasuk() != null ? rp.getTglMasuk().format(dtFmt) : "—"));
+            grid.add(detailField("Barang",
+                    b != null ? b.getNamaBarang() + (b.getKodeBarang() != null ? " [" + b.getKodeBarang() + "]" : "") : "—", SvgIcons.PACKAGE));
+            grid.add(detailField("Lokasi",
+                    b != null && b.getRuangan() != null ? b.getRuangan().getNamaRuangan() : "—", SvgIcons.MAP_PIN));
+            grid.add(detailField("Dilaporkan Oleh",
+                    rp.getDilaporkanOleh() != null ? rp.getDilaporkanOleh().getNamaLengkap() : "—", SvgIcons.USER));
+            grid.add(detailField("Tanggal Masuk",
+                    rp.getTglMasuk() != null ? rp.getTglMasuk().format(dtFmt) : "—", SvgIcons.CALENDAR));
             if (rp.getTeknisiVendor() != null && !rp.getTeknisiVendor().isBlank())
-                grid.add(detailField("🔩 Teknisi / Vendor", rp.getTeknisiVendor()));
+                grid.add(detailField("Teknisi / Vendor", rp.getTeknisiVendor(), SvgIcons.WRENCH));
             if (rp.getBiaya() != null && rp.getBiaya().compareTo(BigDecimal.ZERO) > 0)
-                grid.add(detailField("💰 Biaya", "Rp " + String.format("%,.0f", rp.getBiaya())));
+                grid.add(detailField("Biaya", "Rp " + String.format("%,.0f", rp.getBiaya()), SvgIcons.COINS));
             if (rp.getTglSelesai() != null)
-                grid.add(detailField("✅ Tanggal Selesai", rp.getTglSelesai().format(dtFmt)));
+                grid.add(detailField("Tanggal Selesai", rp.getTglSelesai().format(dtFmt), SvgIcons.CALENDAR_CHECK));
             if (rp.getCatatan() != null && !rp.getCatatan().isBlank())
-                grid.add(detailField("📝 Deskripsi Kerusakan", rp.getCatatan()));
+                grid.add(detailField("Deskripsi Kerusakan", rp.getCatatan(), SvgIcons.FILE_TEXT));
             card.add(grid);
 
             // Actions — only for proses
@@ -3683,7 +3734,15 @@ public class AdminDashboardView extends HorizontalLayout {
                 Div actionRow = new Div();
                 actionRow.getStyle().set("display", "flex").set("gap", "10px").set("flex-wrap", "wrap");
 
-                Button selesaiBtn = new Button("✔ Tandai Selesai");
+                Button selesaiBtn = new Button();
+                selesaiBtn.getStyle()
+                        .set("background", "linear-gradient(135deg,#3a9898,#287373)")
+                        .set("color", "white").set("border", "none").set("border-radius", "10px")
+                        .set("font-family", "'Inter', sans-serif").set("font-size", "13px")
+                        .set("font-weight", "700").set("height", "40px").set("padding", "0 18px")
+                        .set("display", "inline-flex").set("align-items", "center").set("justify-content", "center").set("gap", "6px")
+                        .set("cursor", "pointer").set("flex", "1");
+                SvgIcons.attachIconAndText(selesaiBtn, "Tandai Selesai", SvgIcons.CHECK_CIRCLE, 14, "white", true);
                 selesaiBtn.getStyle()
                         .set("background", "linear-gradient(135deg,#3a9898,#287373)")
                         .set("color", "white").set("border", "none").set("border-radius", "10px")

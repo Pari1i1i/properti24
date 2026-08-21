@@ -22,6 +22,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import property24.entity.User;
 import property24.service.UserService;
 import property24.util.AuthSession;
+import property24.util.SvgIcons;
 import property24.views.admin.AdminDashboardView;
 
 import java.util.Optional;
@@ -222,7 +223,7 @@ public class LoginView extends HorizontalLayout {
         remRow.getStyle().set("margin", "12px 0 4px");
 
         // Login Button
-        Button loginBtn = new Button("LOGIN  \u2192");
+        Button loginBtn = new Button();
         loginBtn.setId("login-btn");
         loginBtn.setWidthFull();
         loginBtn.getStyle()
@@ -235,10 +236,15 @@ public class LoginView extends HorizontalLayout {
                 .set("border", "none")
                 .set("border-radius", "8px")
                 .set("height", "50px")
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px")
                 .set("cursor", "pointer")
                 .set("margin-top", "18px")
                 .set("transition", "all 0.3s ease")
                 .set("box-shadow", "0 4px 15px rgba(78,143,78,0.25)");
+        SvgIcons.attachIconAndText(loginBtn, "LOGIN", SvgIcons.ARROW_RIGHT, 15, "#0a1f0f", false);
         loginBtn.addClickListener(e -> onLogin(username.getValue(), password.getValue()));
 
         // Footer
